@@ -12,3 +12,4 @@
 /stamp-h?
 .deps/
 *.o
+*.dirstamp
