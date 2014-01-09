@@ -1,8 +1,13 @@
-SUBDIRS = lib src tools
+AUTOMAKE_OPTIONS = subdir-objects
 
-distclean-local:
-	-rm -rf autom4te.cache
-	-rm -f aclocal.m4
-	-rm -f config.h.in
-	-rm -f configure
-	-rm -f Makefile.in
+ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
+
+AM_CPPFLAGS = $(LIBEBUS_CFLAGS)
+
+bin_PROGRAMS = ebusd
+
+ebusd_SOURCES = src/main.cpp
+
+ebusd_LDADD = $(LIBEBUS_LIBS)
+
+dist_noinst_SCRIPTS = autogen.sh
