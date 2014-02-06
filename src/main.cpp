@@ -18,9 +18,7 @@
  */
 
 #include "libebus.hpp"
-#include "utils/logger.hpp"
-//~ #include <iostream>
-//~ #include <iomanip>
+#include "logger.hpp"
 
 using namespace libebus;
 
@@ -28,7 +26,7 @@ int main (void)
 {
 	LogDivider & L = LogDivider::Instance();
 	L += new LogConsole(Base | User, Error, "LogConsole");
-	L += new LogFile(Base, Error, "LogFile", "./test.txt");
+	//~ L += new LogFile(Base, Error, "LogFile", "./test.txt");
 
 	L.start("LogDivider");
 
