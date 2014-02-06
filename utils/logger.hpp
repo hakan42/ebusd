@@ -1,7 +1,3 @@
-#ifndef LOGGER_HPP__
-#define LOGGER_HPP__
-
-#include "wqueue.hpp"
 /*
  * Copyright (C) Roland Jax 2014 <roland.jax@liwest.at>
  *
@@ -21,6 +17,10 @@
  * along with ebusd. If not, see http://www.gnu.org/licenses/.
  */
 
+#ifndef LOGGER_HPP__
+#define LOGGER_HPP__
+
+#include "wqueue.hpp"
 #include "thread.hpp"
 #include <string>
 #include <functional>
@@ -89,7 +89,7 @@ public:
 	const char* getName() const { return (m_name.c_str()); }
 
 protected:
-	WQueue<LogMessage *> m_queue;
+	WQueue<LogMessage*> m_queue;
 
 private:
 	unsigned char m_areas;
