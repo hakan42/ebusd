@@ -19,35 +19,142 @@
 
 #include "libebus.hpp"
 #include "logger.hpp"
+#include <iostream>
+#include <csignal>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 using namespace libebus;
 
-int main (void)
+LogDivider & L = LogDivider::Instance();
+
+void shutdown()
 {
-	LogDivider & L = LogDivider::Instance();
-	L += new LogConsole(Base | User, Error, "LogConsole");
-	//~ L += new LogFile(Base, Error, "LogFile", "./test.txt");
+	//~ if (foreground == NO) {
 
-	L.start("LogDivider");
+	// delete PID file
+	//~ if (pidfile_locked)
+	//~ if (pid_file_close(pidfile, pidfd) == -1)
+	//~ log_print(L_INF, "%s deleted", pidfile);
 
-	L.log(Base, Error, "BASE ERROR %s", "abc");
-	L.log(Base, Event, "BASE EVENT %s", "def");
-	L.log(Base, Trace, "BASE TRACE %s", "ghi");
-	L.log(Base, Debug, "BASE DEBUG %s", "jkl");
+	// Reset all signal handlers to default
+	signal(SIGCHLD, SIG_DFL);
+	signal(SIGTSTP, SIG_DFL);
+	signal(SIGTTOU, SIG_DFL);
+	signal(SIGTTIN, SIG_DFL);
+	signal(SIGHUP, SIG_DFL);
+	signal(SIGINT, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
+
+	// print end message
+	L.log(Base, Event, "ebusd stopped");
+	//~ }	
 	
-	L.log(Comm, Error, "COMM ERROR %s", "abc");
-	L.log(Comm, Event, "COMM EVENT %s", "def");
-	L.log(Comm, Trace, "COMM TRACE %s", "ghi");
-	L.log(Comm, Debug, "COMM DEBUG %s", "jkl");
-	
-	L.log(User, Error, "USER ERROR %s", "abc");
-	L.log(User, Event, "USER EVENT %s", "def");
-	L.log(User, Trace, "USER TRACE %s", "ghi");
-	L.log(User, Debug, "USER DEBUG %s", "jkl");
-
-
+	sleep(1);
 	L.stop();
 	
-	return 0;
+	exit(EXIT_SUCCESS);
+}
 
+void signal_handler(int sig)
+{
+	switch(sig) {
+	case SIGHUP:
+		L.log(Base, Event, "SIGHUP received");
+		break;
+	case SIGINT:
+		L.log(Base, Event, "SIGINT received");
+		break;
+	case SIGTERM:
+		L.log(Base, Event, "SIGTERM received");
+		shutdown();
+		break;
+	default:
+		L.log(Base, Event, "undefined signal %s", strsignal(sig));
+		break;
+	}
+}
+
+void daemonize()
+{
+	pid_t pid;
+
+	// fork off the parent process
+	pid = fork();
+	
+	if (pid < 0) {
+		std::cerr << "ebusd fork() failed." << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	// If we got a good PID, then we can exit the parent process
+	if (pid > 0) {
+		// printf("Child process created: %d\n", pid);
+		exit(EXIT_SUCCESS);
+	}
+
+	// At this point we are executing as the child process
+
+	// Set file permissions 750
+	umask(027);
+
+	// Create a new SID for the child process and
+	// detach the process from the parent (normally a shell)
+	if (setsid() < 0) {
+		std::cerr << "ebusd setsid() failed." << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	// Change the current working directory. This prevents the current
+	// directory from being locked; hence not being able to remove it.
+	if (chdir("/tmp") < 0) {  //DAEMON_WORKDIR
+		std::cerr << "ebusd chdir() failed." << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	// Close stdin, stdout and stderr
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
+
+	// write pidfile and try to lock it
+	//~ if (pid_file_open(pidfile, &pidfd) == -1) {
+		//~ log_print(L_ERR, "can't open pidfile: %s\n", pidfile);
+		//~ cleanup(EXIT_FAILURE);
+	//~ } else {
+		//~ pidfile_locked = YES;
+		//~ log_print(L_INF, "%s created.", pidfile);
+	//~ }
+
+	// Cancel certain signals
+	signal(SIGCHLD, SIG_DFL); // A child process dies
+	signal(SIGTSTP, SIG_IGN); // Various TTY signals
+	signal(SIGTTOU, SIG_IGN); // Ignore TTY background writes
+	signal(SIGTTIN, SIG_IGN); // Ignore TTY background reads
+
+	// Trap signals that we expect to receive
+	signal(SIGHUP, signal_handler);
+	signal(SIGINT, signal_handler);
+	signal(SIGTERM, signal_handler);
+}
+
+int main ()
+{
+	
+	daemonize();
+	
+	//~ L += new LogConsole(Base | User, Error, "LogConsole");
+	L += new LogFile(Base, Debug, "LogFile", "/tmp/test.txt");
+	
+	L.start("LogDivider");
+
+	while (1) {
+		sleep(1);
+		L.log(Base, Event, "Loop");
+	}
+
+
+	shutdown();
+		
+	return 0;
 }
