@@ -21,21 +21,55 @@
 #include "logger.hpp"
 #include <iostream>
 #include <csignal>
+#include <cstring>
+#include <cstdio>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 
 using namespace libebus;
 
+const char *progname;
+
 LogDivider & L = LogDivider::Instance();
+
+std::string pidfile("/var/run/ebusd.pid");
+static int pidfd = 0;
+
+int pid_file_open(const char* file, int& fd)
+{
+	char pid[10];
+
+	fd = open(file, O_RDWR|O_CREAT, 0600);
+	if(fd < 0)
+		return -1;
+
+	if(lockf(fd, F_TLOCK, 0) < 0)
+		return -1;
+
+	sprintf(pid, "%d\n", getpid());
+	if(write(fd, pid, strlen(pid)) < 0)
+		return -1;
+
+	return 0;
+}
+
+int pid_file_close(const char* file, const int fd)
+{
+	if(close(fd) < 0)
+		return -1;
+
+	if(remove(file) < 0)
+		return -1;
+
+	return 0;
+}
 
 void shutdown()
 {
-	//~ if (foreground == NO) {
-
 	// delete PID file
-	//~ if (pidfile_locked)
-	//~ if (pid_file_close(pidfile, pidfd) == -1)
-	//~ log_print(L_INF, "%s deleted", pidfile);
+	pid_file_close(pidfile.c_str(), pidfd);
 
 	// Reset all signal handlers to default
 	signal(SIGCHLD, SIG_DFL);
@@ -46,13 +80,10 @@ void shutdown()
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
 
-	// print end message
+	// print end message and stop logger
 	L.log(Base, Event, "ebusd stopped");
-	//~ }	
-	
-	sleep(1);
 	L.stop();
-	
+
 	exit(EXIT_SUCCESS);
 }
 
@@ -118,13 +149,10 @@ void daemonize()
 	close(STDERR_FILENO);
 
 	// write pidfile and try to lock it
-	//~ if (pid_file_open(pidfile, &pidfd) == -1) {
-		//~ log_print(L_ERR, "can't open pidfile: %s\n", pidfile);
-		//~ cleanup(EXIT_FAILURE);
-	//~ } else {
-		//~ pidfile_locked = YES;
-		//~ log_print(L_INF, "%s created.", pidfile);
-	//~ }
+	if (pid_file_open(pidfile.c_str(), pidfd) == -1) {
+		std::cerr << "can't open pidfile: %s" << pidfile.c_str() << std::endl;
+		exit(EXIT_FAILURE);
+	}
 
 	// Cancel certain signals
 	signal(SIGCHLD, SIG_DFL); // A child process dies
@@ -138,15 +166,18 @@ void daemonize()
 	signal(SIGTERM, signal_handler);
 }
 
-int main ()
+int main(int argc, char *argv[])
 {
-	
+	// set progname
+	progname = (const char *)strrchr(argv[0], '/');
+	progname = progname ? (progname + 1) : argv[0];
+
 	daemonize();
 	
 	//~ L += new LogConsole(Base | User, Error, "LogConsole");
 	L += new LogFile(Base, Debug, "LogFile", "/tmp/test.txt");
-	
 	L.start("LogDivider");
+	L.log(Base, Event, "ebusd started");
 
 	while (1) {
 		sleep(1);
@@ -155,6 +186,5 @@ int main ()
 
 
 	shutdown();
-		
-	return 0;
+
 }
