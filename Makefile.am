@@ -9,7 +9,8 @@ bin_PROGRAMS = ebusd
 ebusd_SOURCES = src/main.cpp \
 		utils/thread.cpp \
 		utils/logger.cpp \
-		utils/socket.cpp
+		utils/socket.cpp \
+		utils/daemon.cpp
 
 ebusd_LDADD = $(LIBEBUS_LIBS) \
 		-lpthread

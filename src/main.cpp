@@ -19,7 +19,9 @@
 
 #include "libebus.hpp"
 #include "logger.hpp"
+#include "daemon.hpp"
 #include <iostream>
+#include <memory>
 #include <csignal>
 #include <cstring>
 #include <cstdio>
@@ -31,51 +33,20 @@
 using namespace libebus;
 
 const char *progname;
+Commands* commands;
 
 LogDivider & L = LogDivider::Instance();
 
-std::string pidfile("/var/run/ebusd.pid");
-static int pidfd = 0;
-
-int pid_file_open(const char* file, int& fd)
-{
-	char pid[10];
-
-	fd = open(file, O_RDWR|O_CREAT, 0600);
-	if(fd < 0)
-		return -1;
-
-	if(lockf(fd, F_TLOCK, 0) < 0)
-		return -1;
-
-	sprintf(pid, "%d\n", getpid());
-	if(write(fd, pid, strlen(pid)) < 0)
-		return -1;
-
-	return 0;
-}
-
-int pid_file_close(const char* file, const int fd)
-{
-	if(close(fd) < 0)
-		return -1;
-
-	if(remove(file) < 0)
-		return -1;
-
-	return 0;
-}
-
 void shutdown()
 {
-	// delete PID file
-	pid_file_close(pidfile.c_str(), pidfd);
+	// free commands DB
+	delete commands;
 
 	// Reset all signal handlers to default
-	signal(SIGCHLD, SIG_DFL);
-	signal(SIGTSTP, SIG_DFL);
-	signal(SIGTTOU, SIG_DFL);
-	signal(SIGTTIN, SIG_DFL);
+	//~ signal(SIGCHLD, SIG_DFL);
+	//~ signal(SIGTSTP, SIG_DFL);
+	//~ signal(SIGTTOU, SIG_DFL);
+	//~ signal(SIGTTIN, SIG_DFL);
 	signal(SIGHUP, SIG_DFL);
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
@@ -106,84 +77,48 @@ void signal_handler(int sig)
 	}
 }
 
-void daemonize()
+int main(int argc, char *argv[])
 {
-	pid_t pid;
+	// set progname
+	progname = (const char*) strrchr(argv[0], '/');
+	progname = progname ? (progname + 1) : argv[0];
 
-	// fork off the parent process
-	pid = fork();
-	
-	if (pid < 0) {
-		std::cerr << "ebusd fork() failed." << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
-	// If we got a good PID, then we can exit the parent process
-	if (pid > 0) {
-		// printf("Child process created: %d\n", pid);
-		exit(EXIT_SUCCESS);
-	}
-
-	// At this point we are executing as the child process
-
-	// Set file permissions 750
-	umask(027);
-
-	// Create a new SID for the child process and
-	// detach the process from the parent (normally a shell)
-	if (setsid() < 0) {
-		std::cerr << "ebusd setsid() failed." << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
-	// Change the current working directory. This prevents the current
-	// directory from being locked; hence not being able to remove it.
-	if (chdir("/tmp") < 0) {  //DAEMON_WORKDIR
-		std::cerr << "ebusd chdir() failed." << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
-	// Close stdin, stdout and stderr
-	close(STDIN_FILENO);
-	close(STDOUT_FILENO);
-	close(STDERR_FILENO);
-
-	// write pidfile and try to lock it
-	if (pid_file_open(pidfile.c_str(), pidfd) == -1) {
-		std::cerr << "can't open pidfile: %s" << pidfile.c_str() << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	// make me daemon
+	Daemon daemon("/var/run/ebusd.pid");
 
 	// Cancel certain signals
-	signal(SIGCHLD, SIG_DFL); // A child process dies
-	signal(SIGTSTP, SIG_IGN); // Various TTY signals
-	signal(SIGTTOU, SIG_IGN); // Ignore TTY background writes
-	signal(SIGTTIN, SIG_IGN); // Ignore TTY background reads
+	//~ signal(SIGCHLD, SIG_DFL); // A child process dies
+	//~ signal(SIGTSTP, SIG_IGN); // Various TTY signals
+	//~ signal(SIGTTOU, SIG_IGN); // Ignore TTY background writes
+	//~ signal(SIGTTIN, SIG_IGN); // Ignore TTY background reads
 
 	// Trap signals that we expect to receive
 	signal(SIGHUP, signal_handler);
 	signal(SIGINT, signal_handler);
 	signal(SIGTERM, signal_handler);
-}
 
-int main(int argc, char *argv[])
-{
-	// set progname
-	progname = (const char *)strrchr(argv[0], '/');
-	progname = progname ? (progname + 1) : argv[0];
-
-	daemonize();
-	
+	// start Logger
 	//~ L += new LogConsole(Base | User, Error, "LogConsole");
 	L += new LogFile(Base, Debug, "LogFile", "/tmp/test.txt");
 	L.start("LogDivider");
 	L.log(Base, Event, "ebusd started");
 
-	while (1) {
+	// print info from daemon
+	if (daemon.status())
+		L.log(Base, Event, "change to daemon");
+
+	// create commands DB
+	commands = Config("vaillant", CSV).getCommands();
+	L.log(Base, Event, "commands DB created");
+
+	// search command
+	//~ std::size_t index = commands->findCommand("get vr903 RaumTempSelfHeatingOffset");
+	//~ L.log(Base, Event, "found at index: %d", index);
+	
+	for (int i = 0; i < 5; i++) {
 		sleep(1);
 		L.log(Base, Event, "Loop");
 	}
-
 
 	shutdown();
 
