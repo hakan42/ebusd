@@ -39,4 +39,4 @@ private:
 	
 };
 
-#endif // THREAD_HPP__
+#endif // DAEMON_HPP__

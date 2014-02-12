@@ -43,10 +43,6 @@ void shutdown()
 	delete commands;
 
 	// Reset all signal handlers to default
-	//~ signal(SIGCHLD, SIG_DFL);
-	//~ signal(SIGTSTP, SIG_DFL);
-	//~ signal(SIGTTOU, SIG_DFL);
-	//~ signal(SIGTTIN, SIG_DFL);
 	signal(SIGHUP, SIG_DFL);
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
@@ -85,12 +81,6 @@ int main(int argc, char *argv[])
 
 	// make me daemon
 	Daemon daemon("/var/run/ebusd.pid");
-
-	// Cancel certain signals
-	//~ signal(SIGCHLD, SIG_DFL); // A child process dies
-	//~ signal(SIGTSTP, SIG_IGN); // Various TTY signals
-	//~ signal(SIGTTOU, SIG_IGN); // Ignore TTY background writes
-	//~ signal(SIGTTIN, SIG_IGN); // Ignore TTY background reads
 
 	// Trap signals that we expect to receive
 	signal(SIGHUP, signal_handler);
