@@ -26,8 +26,18 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-Daemon::Daemon(const char* file) : m_status(false), m_pidfile(file), m_pidfd(0)
+Daemon& Daemon::Instance()
 {
+	static Daemon instance;
+	return instance;
+}
+
+void Daemon::run(const char* file)
+{
+	m_status = false;
+	m_pidfile = file;
+	m_pidfd = 0;
+	
 	pid_t pid;
 
 	// fork off the parent process

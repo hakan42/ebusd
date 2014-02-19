@@ -24,15 +24,21 @@ class Daemon
 {
    
 public:
-	Daemon(const char* file);
-	~Daemon() { pidfile_close(); }
-
+	static Daemon& Instance();
+	~Daemon() {}
+	
+	void run(const char* file);
+	void stop() { pidfile_close(); }
 	bool status() { return m_status; }
 
 private:
 	bool m_status;
 	const char* m_pidfile;
 	int m_pidfd;
+
+	Daemon() {}
+	Daemon(const Daemon&);
+	Daemon& operator= (const Daemon&);
 
 	bool pidfile_open();
 	bool pidfile_close();

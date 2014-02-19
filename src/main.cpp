@@ -34,7 +34,9 @@
 using namespace libebus;
 
 Appl& A = Appl::Instance();
+Daemon& D = Daemon::Instance();
 LogDivider& L = LogDivider::Instance();
+
 Commands* commands;
 
 void shutdown()
@@ -46,6 +48,10 @@ void shutdown()
 	signal(SIGHUP, SIG_DFL);
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
+
+	// delete daemon pid file
+	if (D.status())
+		D.stop();
 
 	// print end message and stop logger
 	L.log(Base, Event, "ebusd stopped");
@@ -75,8 +81,8 @@ void signal_handler(int sig)
 
 int main(int argc, char* argv[])
 {
-	//~ A.addItem("p_string", Appl::Param("default"), "s", "string", "just a string", Appl::type_string, Appl::opt_optional);
-	A.addItem("p_help", Appl::Param(false), "h", "help", "print this message", Appl::type_bool, Appl::opt_none);
+	A.addItem("p_foreground", Appl::Param(false), "f", "foreground", "run in foreground", Appl::type_bool, Appl::opt_none);
+	A.addItem("p_help", Appl::Param(false), "h", "help", "\tprint this message", Appl::type_bool, Appl::opt_none);
 	
 	if (!A.parse(argc, argv)) {
 		A.printArgs();
@@ -90,7 +96,12 @@ int main(int argc, char* argv[])
 	}
 	
 	// make me daemon
-	Daemon daemon("/var/run/ebusd.pid");
+	if (!A.getParam<bool>("p_foreground")) {
+		D.run("/var/run/ebusd.pid");
+		L += new LogFile(Base, Debug, "LogFile", "/tmp/test.txt");
+	} else {
+		L += new LogConsole(Base, Debug, "LogConsole");
+	}
 
 	// Trap signals that we expect to receive
 	signal(SIGHUP, signal_handler);
@@ -99,12 +110,12 @@ int main(int argc, char* argv[])
 
 	// start Logger
 	//~ L += new LogConsole(Base | User, Error, "LogConsole");
-	L += new LogFile(Base, Debug, "LogFile", "/tmp/test.txt");
+	//~ L += new LogFile(Base, Debug, "LogFile", "/tmp/test.txt");
 	L.start("LogDivider");
 	L.log(Base, Event, "ebusd started");
 
 	// print info from daemon
-	if (daemon.status())
+	if (D.status())
 		L.log(Base, Event, "change to daemon");
 
 	// create commands DB
