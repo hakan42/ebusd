@@ -39,6 +39,12 @@ LogDivider& L = LogDivider::Instance();
 
 Commands* commands;
 
+void define_args()
+{
+	A.addItem("p_foreground", Appl::Param(false), "f", "foreground", "run in foreground", Appl::type_bool, Appl::opt_none);
+	A.addItem("p_help", Appl::Param(false), "h", "help", "\tprint this message", Appl::type_bool, Appl::opt_none);
+}
+
 void shutdown()
 {
 	// free commands DB
@@ -81,9 +87,10 @@ void signal_handler(int sig)
 
 int main(int argc, char* argv[])
 {
-	A.addItem("p_foreground", Appl::Param(false), "f", "foreground", "run in foreground", Appl::type_bool, Appl::opt_none);
-	A.addItem("p_help", Appl::Param(false), "h", "help", "\tprint this message", Appl::type_bool, Appl::opt_none);
-	
+	// define args and application variables
+	define_args();
+
+	// parse arguments
 	if (!A.parse(argc, argv)) {
 		A.printArgs();
 		exit(EXIT_FAILURE);
@@ -92,7 +99,7 @@ int main(int argc, char* argv[])
 	// print help
 	if (A.getParam<bool>("p_help")) {
 		A.printArgs();
-		exit(EXIT_FAILURE);
+		exit(EXIT_SUCCESS);
 	}
 	
 	// make me daemon
@@ -103,14 +110,12 @@ int main(int argc, char* argv[])
 		L += new LogConsole(Base, Debug, "LogConsole");
 	}
 
-	// Trap signals that we expect to receive
+	// trap signals that we expect to receive
 	signal(SIGHUP, signal_handler);
 	signal(SIGINT, signal_handler);
 	signal(SIGTERM, signal_handler);
 
 	// start Logger
-	//~ L += new LogConsole(Base | User, Error, "LogConsole");
-	//~ L += new LogFile(Base, Debug, "LogFile", "/tmp/test.txt");
 	L.start("LogDivider");
 	L.log(Base, Event, "ebusd started");
 
@@ -119,7 +124,7 @@ int main(int argc, char* argv[])
 		L.log(Base, Event, "change to daemon");
 
 	// create commands DB
-	commands = ConfigCommands("vaillant", CSV).getCommands();
+	commands = ConfigCommands("contrib/csv/vaillant", CSV).getCommands();
 	L.log(Base, Event, "commands DB created");
 
 	// search command
