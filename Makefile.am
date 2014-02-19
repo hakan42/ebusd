@@ -10,7 +10,8 @@ ebusd_SOURCES = src/main.cpp \
 		utils/thread.cpp \
 		utils/logger.cpp \
 		utils/socket.cpp \
-		utils/daemon.cpp
+		utils/daemon.cpp \
+		utils/appl.cpp
 
 ebusd_LDADD = $(LIBEBUS_LIBS) \
 		-lpthread

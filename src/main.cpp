@@ -20,6 +20,7 @@
 #include "libebus.hpp"
 #include "logger.hpp"
 #include "daemon.hpp"
+#include "appl.hpp"
 #include <iostream>
 #include <memory>
 #include <csignal>
@@ -32,10 +33,9 @@
 
 using namespace libebus;
 
-const char *progname;
+Appl& A = Appl::Instance();
+LogDivider& L = LogDivider::Instance();
 Commands* commands;
-
-LogDivider & L = LogDivider::Instance();
 
 void shutdown()
 {
@@ -73,12 +73,22 @@ void signal_handler(int sig)
 	}
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	// set progname
-	progname = (const char*) strrchr(argv[0], '/');
-	progname = progname ? (progname + 1) : argv[0];
-
+	//~ A.addItem("p_string", Appl::Param("default"), "s", "string", "just a string", Appl::type_string, Appl::opt_optional);
+	A.addItem("p_help", Appl::Param(false), "h", "help", "print this message", Appl::type_bool, Appl::opt_none);
+	
+	if (!A.parse(argc, argv)) {
+		A.printArgs();
+		exit(EXIT_FAILURE);
+	}
+	
+	// print help
+	if (A.getParam<bool>("p_help")) {
+		A.printArgs();
+		exit(EXIT_FAILURE);
+	}
+	
 	// make me daemon
 	Daemon daemon("/var/run/ebusd.pid");
 
@@ -98,12 +108,12 @@ int main(int argc, char *argv[])
 		L.log(Base, Event, "change to daemon");
 
 	// create commands DB
-	commands = Config("vaillant", CSV).getCommands();
+	commands = ConfigCommands("vaillant", CSV).getCommands();
 	L.log(Base, Event, "commands DB created");
 
 	// search command
-	//~ std::size_t index = commands->findCommand("get vr903 RaumTempSelfHeatingOffset");
-	//~ L.log(Base, Event, "found at index: %d", index);
+	std::size_t index = commands->findCommand("get vr903 RaumTempSelfHeatingOffset");
+	L.log(Base, Event, "found at index: %d", index);
 	
 	for (int i = 0; i < 5; i++) {
 		sleep(1);

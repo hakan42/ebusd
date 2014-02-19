@@ -23,8 +23,6 @@
 #include <pthread.h>
 #include <list>
 
-using namespace std;
-
 template <typename T> class WQueue
 {
 
@@ -77,7 +75,7 @@ public:
 	}
 
 private:
-	list<T> m_queue;
+	std::list<T> m_queue;
 	pthread_mutex_t m_mutex;
 	pthread_cond_t m_condv;
 	
