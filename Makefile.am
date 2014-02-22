@@ -9,7 +9,7 @@ bin_PROGRAMS = ebusd
 ebusd_SOURCES = src/main.cpp \
 		utils/thread.cpp \
 		utils/logger.cpp \
-		utils/socket.cpp \
+		utils/network.cpp \
 		utils/daemon.cpp \
 		utils/appl.cpp
 

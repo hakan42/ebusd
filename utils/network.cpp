@@ -17,24 +17,9 @@
  * along with ebusd. If not, see http://www.gnu.org/licenses/.
  */
 
-#include "socket.hpp"
+#include "network.hpp"
 #include <arpa/inet.h>
 #include <string.h>
-
-TCPSocket::~TCPSocket()
-{
-	close(m_sd);
-}
-
-ssize_t TCPSocket::recv(char* buffer, size_t len) 
-{
-	return ::read(m_sd, buffer, len);
-}
-
-ssize_t TCPSocket::send(const char* buffer, size_t len) 
-{
-	return ::write(m_sd, buffer, len);
-}
 
 TCPSocket::TCPSocket(int sd, struct sockaddr_in* address) : m_sd(sd)
 {
@@ -44,13 +29,6 @@ TCPSocket::TCPSocket(int sd, struct sockaddr_in* address) : m_sd(sd)
 	m_port = ntohs(address->sin_port);
 }
 
-
-
-TCPListener::~TCPListener()
-{
-	if (m_lsd > 0)
-		close(m_lsd);
-}
 
 int TCPListener::start()
 {
@@ -108,3 +86,26 @@ TCPSocket* TCPListener::accept()
 	
 	return new TCPSocket(sd, &address);
 }
+
+
+void* ConnectionHandler::run() {
+
+	for (int i = 0;; i++) {
+		
+		Connection* connection = m_queue.remove();
+		TCPSocket* socket = connection->getSocket();
+
+		char data[256];
+		int datalen;
+		
+		while ((datalen = socket->recv(data, sizeof(data)-1)) != 0) {
+			data[datalen] = '\0';
+			socket->send(data, datalen);
+		}
+		
+		delete connection; 
+	}
+
+	return NULL;
+}
+

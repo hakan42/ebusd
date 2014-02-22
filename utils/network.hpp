@@ -20,6 +20,8 @@
 #ifndef SOCKET_HPP__
 #define SOCKET_HPP__
 
+#include "wqueue.hpp"
+#include "thread.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -31,10 +33,10 @@ class TCPSocket
 public:
 	friend class TCPListener;
 
-	~TCPSocket();
+	~TCPSocket() { close(m_sd); }
 
-	ssize_t recv(char* buffer, size_t len);
-	ssize_t send(const char* buffer, size_t len);
+	ssize_t recv(char* buffer, size_t len) { return read(m_sd, buffer, len); }
+	ssize_t send(const char* buffer, size_t len) { return write(m_sd, buffer, len); }
 
 	std::string getIP() { return m_ip; }
 	int getPort() { return m_port; }
@@ -55,7 +57,7 @@ public:
 	TCPListener(int port, const char* address = "")
 		: m_lsd(0), m_port(port), m_address(address), m_listening(false) {}
 
-	~TCPListener();
+	~TCPListener() { if (m_lsd > 0) {close(m_lsd);} }
 
 	int start();
 	TCPSocket* accept();
@@ -65,6 +67,33 @@ private:
 	int m_port;
 	std::string m_address;
 	bool m_listening;
+
+};
+
+class Connection
+{
+
+public:
+	Connection(TCPSocket* socket) : m_socket(socket) {}
+	~Connection() { delete m_socket; }
+
+	TCPSocket* getSocket() { return m_socket; }
+
+private:
+	TCPSocket* m_socket;
+	
+};
+
+class ConnectionHandler : public Thread
+{
+
+public:
+	ConnectionHandler(WQueue<Connection*>& queue) : m_queue(queue) {}
+ 
+	void* run();
+
+private:
+	WQueue<Connection*>& m_queue;
 
 };
 
