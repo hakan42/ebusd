@@ -17,7 +17,7 @@
  * along with ebusd. If not, see http://www.gnu.org/licenses/.
  */
 
-#include "network.hpp"
+#include "tcpsocket.hpp"
 #include <arpa/inet.h>
 #include <string.h>
 
@@ -85,27 +85,5 @@ TCPSocket* TCPListener::accept()
 	}
 	
 	return new TCPSocket(sd, &address);
-}
-
-
-void* ConnectionHandler::run() {
-
-	for (int i = 0;; i++) {
-		
-		Connection* connection = m_queue.remove();
-		TCPSocket* socket = connection->getSocket();
-
-		char data[256];
-		int datalen;
-		
-		while ((datalen = socket->recv(data, sizeof(data)-1)) != 0) {
-			data[datalen] = '\0';
-			socket->send(data, datalen);
-		}
-		
-		delete connection; 
-	}
-
-	return NULL;
 }
 

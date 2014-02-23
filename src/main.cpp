@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
 
 	// Create the queue and consumer (worker) threads
 	int numConnections = 2;
-	WQueue<Connection*>  queue;
+	WQueue<TCPConnection*>  queue;
 
 	for (int i = 0; i < numConnections; i++) {
 		
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
 	int port = 5000;
 	std::string ip("127.0.0.1");
 	
-	Connection* connection;
+	TCPConnection* connection;
 	TCPListener* connectionListener;
 	
 	if (ip.length() > 0) {
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 	}
 	                                       
 	if (!connectionListener || connectionListener->start() != 0) {
-		L.log(Base, Event, "Could not create an connection acceptor");
+		L.log(Base, Event, "Could not create an connectionListener");
 		shutdown();
 	}
 
@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		
-		connection = new Connection(socket);
+		connection = new TCPConnection(socket);
 		if (!connection) {
 			L.log(Base, Event, "Could not open new connection");
 			continue;

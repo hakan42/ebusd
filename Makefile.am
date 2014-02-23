@@ -7,9 +7,10 @@ AM_CPPFLAGS = $(LIBEBUS_CFLAGS) -I$(top_srcdir)/utils -Wall -Wextra
 bin_PROGRAMS = ebusd
 
 ebusd_SOURCES = src/main.cpp \
+		src/network.cpp \
 		utils/thread.cpp \
 		utils/logger.cpp \
-		utils/network.cpp \
+		utils/tcpsocket.cpp \
 		utils/daemon.cpp \
 		utils/appl.cpp
 

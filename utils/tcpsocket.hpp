@@ -17,11 +17,9 @@
  * along with ebusd. If not, see http://www.gnu.org/licenses/.
  */
 
-#ifndef SOCKET_HPP__
-#define SOCKET_HPP__
+#ifndef TCPSOCKET_HPP__
+#define TCPSOCKET_HPP__
 
-#include "wqueue.hpp"
-#include "thread.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -70,12 +68,12 @@ private:
 
 };
 
-class Connection
+class TCPConnection
 {
 
 public:
-	Connection(TCPSocket* socket) : m_socket(socket) {}
-	~Connection() { delete m_socket; }
+	TCPConnection(TCPSocket* socket) : m_socket(socket) {}
+	~TCPConnection() { delete m_socket; }
 
 	TCPSocket* getSocket() { return m_socket; }
 
@@ -84,17 +82,4 @@ private:
 	
 };
 
-class ConnectionHandler : public Thread
-{
-
-public:
-	ConnectionHandler(WQueue<Connection*>& queue) : m_queue(queue) {}
- 
-	void* run();
-
-private:
-	WQueue<Connection*>& m_queue;
-
-};
-
-#endif // SOCKET_HPP__
+#endif // TCPSOCKET_HPP__
