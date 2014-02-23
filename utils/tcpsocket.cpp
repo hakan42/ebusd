@@ -21,47 +21,42 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-TCPSocket::TCPSocket(int sd, struct sockaddr_in* address) : m_sd(sd)
+TCPSocket::TCPSocket(int sfd, struct sockaddr_in* address) : m_sfd(sfd)
 {
-	char ip[50];
-	inet_ntop(PF_INET, (struct in_addr*)&(address->sin_addr.s_addr), ip, sizeof(ip)-1);
+	char ip[20];
+	inet_ntop(AF_INET, (struct in_addr*)&(address->sin_addr.s_addr), ip, sizeof(ip)-1);
 	m_ip = ip;
 	m_port = ntohs(address->sin_port);
 }
-
 
 int TCPListener::start()
 {
 	if (m_listening == true)
 		return 0;
 
-	m_lsd = socket(PF_INET, SOCK_STREAM, 0);
+	m_lfd = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in address;
 
 	memset(&address, 0, sizeof(address));
 	
-	address.sin_family = PF_INET;
+	address.sin_family = AF_INET;
 	address.sin_port = htons(m_port);
     
 	if (m_address.size() > 0)
-		inet_pton(PF_INET, m_address.c_str(), &(address.sin_addr));
+		inet_pton(AF_INET, m_address.c_str(), &(address.sin_addr));
 	else
 		address.sin_addr.s_addr = INADDR_ANY;
     
 	int optval = 1;
-	setsockopt(m_lsd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)); 
+	setsockopt(m_lfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)); 
     
-	int result = bind(m_lsd, (struct sockaddr*) &address, sizeof(address));
-	if (result != 0) {
-		//~ perror("bind() failed");
+	int result = bind(m_lfd, (struct sockaddr*) &address, sizeof(address));
+	if (result != 0)
 		return result;
-	}
     
-	result = listen(m_lsd, 5);
-	if (result != 0) {
-		//~ perror("listen() failed");
+	result = listen(m_lfd, 5);
+	if (result != 0)
 		return result;
-	}
 	
 	m_listening = true;
 	return result;
@@ -77,13 +72,11 @@ TCPSocket* TCPListener::accept()
 	
 	memset(&address, 0, sizeof(address));
 	
-	int sd = ::accept(m_lsd, (struct sockaddr*) &address, &len);
+	int sfd = ::accept(m_lfd, (struct sockaddr*) &address, &len);
 	
-	if (sd < 0) {
-		//~ perror("accept() failed");
+	if (sfd < 0)
 		return NULL;
-	}
 	
-	return new TCPSocket(sd, &address);
+	return new TCPSocket(sfd, &address);
 }
 

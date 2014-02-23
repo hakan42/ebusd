@@ -31,21 +31,21 @@ class TCPSocket
 public:
 	friend class TCPListener;
 
-	~TCPSocket() { close(m_sd); }
+	~TCPSocket() { close(m_sfd); }
 
-	ssize_t recv(char* buffer, size_t len) { return read(m_sd, buffer, len); }
-	ssize_t send(const char* buffer, size_t len) { return write(m_sd, buffer, len); }
+	ssize_t recv(char* buffer, size_t len) { return read(m_sfd, buffer, len); }
+	ssize_t send(const char* buffer, size_t len) { return write(m_sfd, buffer, len); }
 
-	std::string getIP() { return m_ip; }
 	int getPort() { return m_port; }
-
+	std::string getIP() { return m_ip; }
+	
 private:
-	int m_sd;
+	int m_sfd;
 	int m_port;
-	std::string m_ip;
+	std::string  m_ip;
 
 	TCPSocket(int sd, struct sockaddr_in* address);
-	
+
 };
 
 class TCPListener
@@ -53,15 +53,15 @@ class TCPListener
 
 public:
 	TCPListener(int port, const char* address = "")
-		: m_lsd(0), m_port(port), m_address(address), m_listening(false) {}
+		: m_lfd(0), m_port(port), m_address(address), m_listening(false) {}
 
-	~TCPListener() { if (m_lsd > 0) {close(m_lsd);} }
+	~TCPListener() { if (m_lfd > 0) {close(m_lfd);} }
 
 	int start();
 	TCPSocket* accept();
 
 private:
-	int m_lsd;
+	int m_lfd;
 	int m_port;
 	std::string m_address;
 	bool m_listening;

@@ -135,16 +135,14 @@ int main(int argc, char* argv[])
 	L.log(Base, Event, "found at index: %d", index);
 
 
-	
 
-	// Create the queue and consumer (worker) threads
+	// Create the queue and ConnectionHandler
 	int numConnections = 2;
-	WQueue<TCPConnection*>  queue;
+	WQueue<TCPConnection*> queue;
 
 	for (int i = 0; i < numConnections; i++) {
 		
 		ConnectionHandler* handler = new ConnectionHandler(queue);
-		
 		if (!handler) {
 		    L.log(Base, Event, "Could not create ConnectionHandler %d", i);
 		    shutdown();
@@ -152,8 +150,8 @@ int main(int argc, char* argv[])
 
 		std::ostringstream name;
 		name << "ConHandler " << i;
-		L.log(Base, Event, "%s started.", name.str().c_str());
 		handler->start(name.str().c_str());
+		L.log(Base, Event, "%s started.", name.str().c_str());
 	}
 
 
