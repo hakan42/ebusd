@@ -52,7 +52,7 @@ class TCPListener
 {
 
 public:
-	TCPListener(int port, const char* address = "")
+	TCPListener(int port, std::string address)
 		: m_lfd(0), m_port(port), m_address(address), m_listening(false) {}
 
 	~TCPListener() { if (m_lfd > 0) {close(m_lfd);} }

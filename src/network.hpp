@@ -37,4 +37,22 @@ private:
 
 };
 
+class Network : public Thread
+{
+
+public:
+	Network(int port, std::string ip, int maxConnections);
+	
+	void* run();
+
+private:
+	int m_port;
+	std::string m_ip;
+	int m_maxConnections;
+	
+	WQueue<TCPConnection*> m_queue;
+	TCPListener* m_Listener;
+
+};
+
 #endif // NETWORK_HPP__

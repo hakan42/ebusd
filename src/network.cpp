@@ -18,8 +18,10 @@
  */
 
 #include "network.hpp"
+#include <sstream>
 
-void* ConnectionHandler::run() {
+void* ConnectionHandler::run()
+{
 
 	for (int i = 0;; i++) {
 		
@@ -39,4 +41,55 @@ void* ConnectionHandler::run() {
 
 	return NULL;
 }
+
+
+Network::Network(int port, std::string ip, int maxConnections)
+	: m_port(port), m_ip(ip), m_maxConnections(maxConnections)
+{
+	// Create ConnectionHandlers
+	for (int i = 0; i < m_maxConnections; i++) {
+		
+		ConnectionHandler* handler = new ConnectionHandler(m_queue);
+		if (!handler) {
+		    //~ std::cout << "Could not create ConnectionHandler " << i << std::endl;
+		    //~ exit(EXIT_FAILURE);
+		}
+
+		std::ostringstream name;
+		name << "ConHandler " << i;
+		handler->start(name.str().c_str());
+		//~ std::cout << name.str().c_str() << " started." << std::endl;
+	}
+
+	// Start Listener
+	m_Listener = new TCPListener(port, ip.c_str());
+	if (!m_Listener || m_Listener->start() != 0) {
+		//~ std::cout << "Could not create an connectionListener" << std::endl;
+		//~ exit(EXIT_FAILURE);
+	}
+}
+
+void* Network::run()
+{
+	TCPConnection* connection;
+	
+	while (1) {
+		TCPSocket* socket = m_Listener->accept(); 
+		if (!socket) {
+			//~ std::cout << "Could not accept a connection" << std::endl;
+			continue;
+		}
+		
+		connection = new TCPConnection(socket);
+		if (!connection) {
+			//~ std::cout << "Could not open new connection" << std::endl;
+			continue;
+		}
+		
+		m_queue.add(connection);
+	}
+	
+	return NULL;
+}
+
 

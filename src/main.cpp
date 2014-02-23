@@ -134,71 +134,15 @@ int main(int argc, char* argv[])
 	std::size_t index = commands->findCommand("get vr903 RaumTempSelfHeatingOffset");
 	L.log(Base, Event, "found at index: %d", index);
 
+	// create network
+	Network network(5000, "127.0.0.1", 2);
+	network.start("Network");
 
-
-	// Create the queue and ConnectionHandler
-	int numConnections = 2;
-	WQueue<TCPConnection*> queue;
-
-	for (int i = 0; i < numConnections; i++) {
-		
-		ConnectionHandler* handler = new ConnectionHandler(queue);
-		if (!handler) {
-		    L.log(Base, Event, "Could not create ConnectionHandler %d", i);
-		    shutdown();
-		}
-
-		std::ostringstream name;
-		name << "ConHandler " << i;
-		handler->start(name.str().c_str());
-		L.log(Base, Event, "%s started.", name.str().c_str());
+	// invinite loop
+	for (int i = 0;; i++) {
+		sleep(1);
+		L.log(Base, Event, "Loop %d", i);
 	}
-
-
-
-	// Create an acceptor then start listening for connections
-	int port = 5000;
-	std::string ip("127.0.0.1");
-	
-	TCPConnection* connection;
-	TCPListener* connectionListener;
-	
-	if (ip.length() > 0) {
-		connectionListener = new TCPListener(port, (char*)ip.c_str());
-	} else {
-		connectionListener = new TCPListener(port);        
-	}
-	                                       
-	if (!connectionListener || connectionListener->start() != 0) {
-		L.log(Base, Event, "Could not create an connectionListener");
-		shutdown();
-	}
-
-	// Add a new connection to the queue
-	while (1) {
-		TCPSocket* socket = connectionListener->accept(); 
-		if (!socket) {
-			L.log(Base, Event, "Could not accept a connection");
-			continue;
-		}
-		
-		connection = new TCPConnection(socket);
-		if (!connection) {
-			L.log(Base, Event, "Could not open new connection");
-			continue;
-		}
-		
-		queue.add(connection);
-	}
-
-
-
-
-	
-	//~ for (int i = 0; i < 5; i++) {
-		//~ sleep(1);
-		//~ L.log(Base, Event, "Loop");
-	//~ }
 
 	shutdown();
 
