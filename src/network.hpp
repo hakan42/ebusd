@@ -31,7 +31,6 @@ class TCPBroker : public Thread
 
 public:
 	TCPBroker(WQueue<TCPConnection*>& queue) : m_queue(queue), m_running(false) {}
-	~TCPBroker() { delete m_socket; }
  
 	void* run();
 

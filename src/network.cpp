@@ -107,7 +107,7 @@ Network::~Network()
 		delete broker;
 	}
 	delete m_Listener;
-	sleep(1);
+	//~ sleep(1);
 }
 
 void* Network::run()

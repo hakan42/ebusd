@@ -136,8 +136,8 @@ int main(int argc, char* argv[])
 	L.log(Base, Event, "found at index: %d", index);
 
 	// create network
-	Network network(5000, "127.0.0.1");
-	network.start("Network");
+	Network* network = new Network(5000, "127.0.0.1");
+	network->start("Network");
 
 	// invinite loop
 	for (int i = 0; i < 10; i++) {
@@ -145,7 +145,8 @@ int main(int argc, char* argv[])
 		L.log(Base, Event, "Loop %d", i);
 	}
 
-	network.stop();
+	network->stop();
+	delete network;
 
 	shutdown();
 
