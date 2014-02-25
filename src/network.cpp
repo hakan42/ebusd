@@ -18,78 +18,175 @@
  */
 
 #include "network.hpp"
+//~ #include <iostream>
 #include <sstream>
+#include <sys/select.h>
 
-void* ConnectionHandler::run()
+void* TCPBroker::run()
 {
+	TCPConnection* connection = m_queue.remove();
+	m_socket = connection->getSocket();
 
-	for (int i = 0;; i++) {
-		
-		TCPConnection* connection = m_queue.remove();
-		TCPSocket* socket = connection->getSocket();
+	m_running = true;
+	
+	int maxfd;
+	fd_set checkfds;
+	struct timeval timeout;
 
-		char data[256];
-		int datalen;
-		
-		while ((datalen = socket->recv(data, sizeof(data)-1)) != 0) {
-			data[datalen] = '\0';
-			socket->send(data, datalen);
+	FD_ZERO(&checkfds);
+	FD_SET(m_notify.notifyFD(), &checkfds);
+	FD_SET(m_socket->getFD(), &checkfds);
+	
+	(m_notify.notifyFD() > m_socket->getFD()) ?
+		(maxfd = m_notify.notifyFD()) : (maxfd = m_socket->getFD());
+
+	for (;;) {
+		fd_set readfds;
+		int ret;
+
+		// set select timeout 10 secs
+		timeout.tv_sec = 10;
+		timeout.tv_usec = 0;		
+
+		// set readfds to inital checkfds
+		readfds = checkfds;
+
+		ret = select(maxfd + 1, &readfds, NULL, NULL, &timeout);
+		if (ret == 0) {
+			//~ std::cout << "timeout: " << timeout.tv_sec << " reached" << std::endl;
+			continue;
 		}
-		
-		delete connection; 
+			
+		// new data from notify
+		if (FD_ISSET(m_notify.notifyFD(), &readfds)) {
+			//~ std::cout << "notified" << std::endl;
+			delete connection;
+			break;
+		}
+
+		// new data from socket
+		if (FD_ISSET(m_socket->getFD(), &readfds)) {
+			char data[256];
+			int datalen;
+			
+			datalen = m_socket->recv(data, sizeof(data)-1);
+			
+			// removed closed socket
+			if (datalen <= 0) {
+				delete connection;
+				m_running = false;
+				break;
+			}
+			
+			data[datalen] = '\0';
+			m_socket->send(data, datalen);
+		}
+
 	}
 
 	return NULL;
 }
 
 
-Network::Network(int port, std::string ip, int maxConnections)
-	: m_port(port), m_ip(ip), m_maxConnections(maxConnections)
+Network::Network(int port, std::string ip) : m_listening(false)
 {
-	// Create ConnectionHandlers
-	for (int i = 0; i < m_maxConnections; i++) {
-		
-		ConnectionHandler* handler = new ConnectionHandler(m_queue);
-		if (!handler) {
-		    //~ std::cout << "Could not create ConnectionHandler " << i << std::endl;
-		    //~ exit(EXIT_FAILURE);
-		}
-
-		std::ostringstream name;
-		name << "ConHandler " << i;
-		handler->start(name.str().c_str());
-		//~ std::cout << name.str().c_str() << " started." << std::endl;
-	}
-
 	// Start Listener
 	m_Listener = new TCPListener(port, ip.c_str());
-	if (!m_Listener || m_Listener->start() != 0) {
-		//~ std::cout << "Could not create an connectionListener" << std::endl;
-		//~ exit(EXIT_FAILURE);
+	if (m_Listener && m_Listener->start() == 0)
+		m_listening = true;
+
+}
+
+Network::~Network()
+{
+	while (!m_brokers.empty()) {
+		TCPBroker* broker = m_brokers.back();
+		m_brokers.pop_back();
+		broker->stop();
+		broker->join();
+		delete broker;
 	}
+	delete m_Listener;
+	sleep(1);
 }
 
 void* Network::run()
 {
-	TCPConnection* connection;
+	if (!m_listening)
+		return NULL;
+
+	int i = 1;
+	int maxfd;
+	fd_set checkfds;
+	struct timeval timeout;
+
+	FD_ZERO(&checkfds);
+	FD_SET(m_notify.notifyFD(), &checkfds);
+	FD_SET(m_Listener->getFD(), &checkfds);
 	
-	while (1) {
-		TCPSocket* socket = m_Listener->accept(); 
-		if (!socket) {
-			//~ std::cout << "Could not accept a connection" << std::endl;
+	(m_notify.notifyFD() > m_Listener->getFD()) ?
+		(maxfd = m_notify.notifyFD()) : (maxfd = m_Listener->getFD());
+
+	for (;;) {
+		fd_set readfds;
+		int ret;
+
+		// set select timeout 1 secs
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;		
+
+		// set readfds to inital checkfds
+		readfds = checkfds;
+
+		ret = select(maxfd + 1, &readfds, NULL, NULL, &timeout);
+		if (ret == 0) {
+			//~ std::cout << "timeout: " << timeout.tv_sec << " reached" << std::endl;
+			wipeBrokers();
 			continue;
 		}
-		
-		connection = new TCPConnection(socket);
-		if (!connection) {
-			//~ std::cout << "Could not open new connection" << std::endl;
-			continue;
+			
+		// new data from notify
+		if (FD_ISSET(m_notify.notifyFD(), &readfds)) {
+			//~ std::cout << "notified" << std::endl;
+			break;
 		}
-		
-		m_queue.add(connection);
+
+		// new data from socket
+		if (FD_ISSET(m_Listener->getFD(), &readfds)) {
+			TCPSocket* socket = m_Listener->newSocket();
+			if (!socket)
+				continue;
+				
+			TCPBroker* broker = new TCPBroker(m_queue);
+			if (!broker)
+				continue;
+
+			std::ostringstream name;
+			name << "Broker " << i++;
+			broker->start(name.str().c_str());
+			m_brokers.push_back(broker);
+				
+			TCPConnection* connection = new TCPConnection(socket);
+			if (!connection)
+				continue;
+			
+			m_queue.add(connection);
+		}
+
 	}
-	
+
 	return NULL;
 }
 
+void Network::wipeBrokers()
+{
+	std::list<TCPBroker*>::iterator b_it;
+	for (b_it = m_brokers.begin(); b_it != m_brokers.end(); b_it++) {
+		if (!(*b_it)->isRunning()) {
+			TCPBroker* broker = *b_it;
+			b_it = m_brokers.erase(b_it);
+			delete broker;
+		}
+	}
+}
 

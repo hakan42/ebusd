@@ -36,8 +36,10 @@ public:
 	ssize_t recv(char* buffer, size_t len) { return read(m_sfd, buffer, len); }
 	ssize_t send(const char* buffer, size_t len) { return write(m_sfd, buffer, len); }
 
-	int getPort() { return m_port; }
-	std::string getIP() { return m_ip; }
+	int getPort() const { return m_port; }
+	std::string getIP() const { return m_ip; }
+
+	int getFD() const { return m_sfd; }
 	
 private:
 	int m_sfd;
@@ -58,7 +60,9 @@ public:
 	~TCPListener() { if (m_lfd > 0) {close(m_lfd);} }
 
 	int start();
-	TCPSocket* accept();
+	TCPSocket* newSocket();
+
+	int getFD() const { return m_lfd; }
 
 private:
 	int m_lfd;
@@ -75,7 +79,7 @@ public:
 	TCPConnection(TCPSocket* socket) : m_socket(socket) {}
 	~TCPConnection() { delete m_socket; }
 
-	TCPSocket* getSocket() { return m_socket; }
+	TCPSocket* getSocket() const { return m_socket; }
 
 private:
 	TCPSocket* m_socket;
@@ -83,3 +87,4 @@ private:
 };
 
 #endif // TCPSOCKET_HPP__
+

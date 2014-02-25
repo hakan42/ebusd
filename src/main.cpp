@@ -49,6 +49,7 @@ void define_args()
 
 void shutdown()
 {
+	
 	// free commands DB
 	delete commands;
 
@@ -135,14 +136,16 @@ int main(int argc, char* argv[])
 	L.log(Base, Event, "found at index: %d", index);
 
 	// create network
-	Network network(5000, "127.0.0.1", 2);
+	Network network(5000, "127.0.0.1");
 	network.start("Network");
 
 	// invinite loop
-	for (int i = 0;; i++) {
+	for (int i = 0; i < 10; i++) {
 		sleep(1);
 		L.log(Base, Event, "Loop %d", i);
 	}
+
+	network.stop();
 
 	shutdown();
 

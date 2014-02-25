@@ -23,17 +23,27 @@
 #include "tcpsocket.hpp"
 #include "wqueue.hpp"
 #include "thread.hpp"
+#include "notify.hpp"
+#include <list>
 
-class ConnectionHandler : public Thread
+class TCPBroker : public Thread
 {
 
 public:
-	ConnectionHandler(WQueue<TCPConnection*>& queue) : m_queue(queue) {}
+	TCPBroker(WQueue<TCPConnection*>& queue) : m_queue(queue), m_running(false) {}
+	~TCPBroker() { delete m_socket; }
  
 	void* run();
 
+	void stop() const { m_notify.notify(); }
+
+	bool isRunning() const { return m_running; }
+
 private:
 	WQueue<TCPConnection*>& m_queue;
+	TCPSocket* m_socket;
+	Notify m_notify;
+	bool m_running;
 
 };
 
@@ -41,17 +51,21 @@ class Network : public Thread
 {
 
 public:
-	Network(int port, std::string ip, int maxConnections);
+	Network(int port, std::string ip);
+	~Network();
 	
 	void* run();
 
+	void stop() const { m_notify.notify(); sleep(1); }
+
 private:
-	int m_port;
-	std::string m_ip;
-	int m_maxConnections;
-	
 	WQueue<TCPConnection*> m_queue;
+	std::list<TCPBroker*> m_brokers;
 	TCPListener* m_Listener;
+	Notify m_notify;
+	bool m_listening;
+
+	void wipeBrokers();
 
 };
 

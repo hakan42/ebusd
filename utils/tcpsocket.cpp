@@ -23,11 +23,12 @@
 
 TCPSocket::TCPSocket(int sfd, struct sockaddr_in* address) : m_sfd(sfd)
 {
-	char ip[20];
+	char ip[17];
 	inet_ntop(AF_INET, (struct in_addr*)&(address->sin_addr.s_addr), ip, sizeof(ip)-1);
 	m_ip = ip;
 	m_port = ntohs(address->sin_port);
 }
+
 
 int TCPListener::start()
 {
@@ -62,7 +63,7 @@ int TCPListener::start()
 	return result;
 }
 
-TCPSocket* TCPListener::accept() 
+TCPSocket* TCPListener::newSocket() 
 {
 	if (m_listening == false)
 		return NULL;
@@ -72,7 +73,7 @@ TCPSocket* TCPListener::accept()
 	
 	memset(&address, 0, sizeof(address));
 	
-	int sfd = ::accept(m_lfd, (struct sockaddr*) &address, &len);
+	int sfd = accept(m_lfd, (struct sockaddr*) &address, &len);
 	
 	if (sfd < 0)
 		return NULL;

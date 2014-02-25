@@ -19,7 +19,7 @@
  
 #include "thread.hpp"
 
-static void * runThread(void * arg)
+static void* runThread(void* arg)
 {
 	return ((Thread *)arg)->run();
 }
@@ -35,7 +35,7 @@ Thread::~Thread()
 		pthread_cancel(m_threadid);
 }
 
-int Thread::start(const char * name)
+int Thread::start(const char* name)
 {
 
 	int result = pthread_create(&m_threadid, NULL, runThread, this);

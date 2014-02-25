@@ -16,31 +16,41 @@
  * You should have received a copy of the GNU General Public License
  * along with ebusd. If not, see http://www.gnu.org/licenses/.
  */
+ 
+#ifndef NOTIFY_HPP_
+#define NOTIFY_HPP_
 
-#ifndef THREAD_HPP__
-#define THREAD_HPP__
+#include <unistd.h>
+#include <fcntl.h>
 
-#include <pthread.h>
-
-class Thread
+class Notify
 {
-   
+
 public:
-	Thread();
-	virtual ~Thread();
+	Notify()
+	{
+		int pipefd[2];
+		int ret = pipe(pipefd);
 
-	int start(const char* name);
-	int join();
-	int detach();
-	pthread_t self();
+		if (ret == 0) {
+			m_recvfd = pipefd[0];
+			m_sendfd = pipefd[1];
+				
+			fcntl(m_sendfd, F_SETFL, O_NONBLOCK);
+		}
 
-	virtual void* run() = 0;
+	}
+	virtual ~Notify() { close(m_sendfd); close(m_recvfd); }
+
+	int notifyFD() const { return m_recvfd; }
+	int notify() const { return write(m_sendfd,"1",1); }
 
 private:
-	pthread_t m_threadid;
-	bool m_running;
-	bool m_detached;
-	
+        int m_recvfd;
+        int m_sendfd;
+        
 };
 
-#endif // THREAD_HPP__
+#endif // NOTIFY_HPP_
+
+
