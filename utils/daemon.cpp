@@ -79,7 +79,7 @@ void Daemon::run(const char* file)
 	close(STDERR_FILENO);
 
 	// write pidfile and try to lock it
-	if (!pidfile_open()) {
+	if (pidfile_open() == false) {
 		std::cerr << "can't open pidfile: %s" << m_pidfile << std::endl;
 		exit(EXIT_FAILURE);
 	}
@@ -92,14 +92,14 @@ bool Daemon::pidfile_open()
 	char pid[10];
 
 	m_pidfd = open(m_pidfile, O_RDWR|O_CREAT, 0600);
-	if(m_pidfd < 0)
+	if (m_pidfd < 0)
 		return false;
 
-	if(lockf(m_pidfd, F_TLOCK, 0) < 0)
+	if (lockf(m_pidfd, F_TLOCK, 0) < 0)
 		return false;
 
 	sprintf(pid, "%d\n", getpid());
-	if(write(m_pidfd, pid, strlen(pid)) < 0)
+	if (write(m_pidfd, pid, strlen(pid)) < 0)
 		return false;
 
 	return true;
@@ -107,10 +107,10 @@ bool Daemon::pidfile_open()
 
 bool Daemon::pidfile_close()
 {
-	if(close(m_pidfd) < 0)
+	if (close(m_pidfd) < 0)
 		return false;
 
-	if(remove(m_pidfile) < 0)
+	if (remove(m_pidfile) < 0)
 		return false;
 
 	return true;

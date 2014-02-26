@@ -72,19 +72,5 @@ private:
 
 };
 
-class TCPConnection
-{
-
-public:
-	TCPConnection(TCPSocket* socket) : m_socket(socket) {}
-	~TCPConnection() { delete m_socket; }
-
-	TCPSocket* getSocket() const { return m_socket; }
-
-private:
-	TCPSocket* m_socket;
-	
-};
-
 #endif // TCPSOCKET_HPP__
 

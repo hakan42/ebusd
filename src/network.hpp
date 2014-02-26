@@ -26,11 +26,11 @@
 #include "notify.hpp"
 #include <list>
 
-class TCPBroker : public Thread
+class Connection : public Thread
 {
 
 public:
-	TCPBroker(WQueue<TCPConnection*>& queue) : m_queue(queue), m_running(false) {}
+	Connection(TCPSocket* socket) : m_socket(socket), m_running(false) {}
  
 	void* run();
 
@@ -39,7 +39,6 @@ public:
 	bool isRunning() const { return m_running; }
 
 private:
-	WQueue<TCPConnection*>& m_queue;
 	TCPSocket* m_socket;
 	Notify m_notify;
 	bool m_running;
@@ -58,13 +57,13 @@ public:
 	void stop() const { m_notify.notify(); sleep(1); }
 
 private:
-	WQueue<TCPConnection*> m_queue;
-	std::list<TCPBroker*> m_brokers;
+	std::list<Connection*> m_connections;
 	TCPListener* m_Listener;
 	Notify m_notify;
 	bool m_listening;
+	bool m_running;
 
-	void wipeBrokers();
+	void wipeDeadConnections();
 
 };
 

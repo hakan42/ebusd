@@ -74,10 +74,10 @@ bool Appl::parse(int argc, char* argv[])
 
 			// is next item an added argument?
 			if (i+1 < m_argc && m_argv[i+1].rfind("-") == std::string::npos) {	
-				if (!checkArg(m_argv[i].substr(2), m_argv[i+1]))
+				if (checkArg(m_argv[i].substr(2), m_argv[i+1]) == false)
 					return false;
 			} else {				
-				if (!checkArg(m_argv[i].substr(2), ""))
+				if (checkArg(m_argv[i].substr(2), "") == false)
 					return false;
 			}
 
@@ -90,10 +90,10 @@ bool Appl::parse(int argc, char* argv[])
 				// only last charater could have an argument
 				if (i+1 < m_argc && m_argv[i+1].rfind("-") == std::string::npos
 				&& j+1 == m_argv[i].size()) {
-					if (!checkArg(m_argv[i].substr(j,1), m_argv[i+1]))
+					if (checkArg(m_argv[i].substr(j,1), m_argv[i+1]) == false)
 						return false;
 				} else {					
-					if (!checkArg(m_argv[i].substr(j,1), ""))
+					if (checkArg(m_argv[i].substr(j,1), "") == false)
 						return false;
 				}			
 			}

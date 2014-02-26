@@ -39,6 +39,7 @@ Appl& A = Appl::Instance();
 Daemon& D = Daemon::Instance();
 LogDivider& L = LogDivider::Instance();
 
+Network* network;
 Commands* commands;
 
 void define_args()
@@ -49,9 +50,13 @@ void define_args()
 
 void shutdown()
 {
+	// free network
+	if (network != NULL)
+		delete network;
 	
 	// free commands DB
-	delete commands;
+	if (commands != NULL)
+		delete commands;
 
 	// Reset all signal handlers to default
 	signal(SIGHUP, SIG_DFL);
@@ -59,7 +64,7 @@ void shutdown()
 	signal(SIGTERM, SIG_DFL);
 
 	// delete daemon pid file
-	if (D.status())
+	if (D.status() == true)
 		D.stop();
 
 	// print end message and stop logger
@@ -95,23 +100,23 @@ int main(int argc, char* argv[])
 	define_args();
 
 	// parse arguments
-	if (!A.parse(argc, argv)) {
+	if (A.parse(argc, argv) == false) {
 		A.printArgs();
 		exit(EXIT_FAILURE);
 	}
 	
 	// print help
-	if (A.getParam<bool>("p_help")) {
+	if (A.getParam<bool>("p_help") == true) {
 		A.printArgs();
 		exit(EXIT_SUCCESS);
 	}
 	
 	// make me daemon
-	if (!A.getParam<bool>("p_foreground")) {
+	if (A.getParam<bool>("p_foreground") == true) {
+		L += new LogConsole(Base, Debug, "LogConsole");
+	} else {
 		D.run("/var/run/ebusd.pid");
 		L += new LogFile(Base, Debug, "LogFile", "/tmp/test.txt");
-	} else {
-		L += new LogConsole(Base, Debug, "LogConsole");
 	}
 
 	// trap signals that we expect to receive
@@ -124,7 +129,7 @@ int main(int argc, char* argv[])
 	L.log(Base, Event, "ebusd started");
 
 	// print info from daemon
-	if (D.status())
+	if (D.status() == true)
 		L.log(Base, Event, "change to daemon");
 
 	// create commands DB
@@ -132,22 +137,18 @@ int main(int argc, char* argv[])
 	L.log(Base, Event, "commands DB created");
 
 	// search command
-	std::size_t index = commands->findCommand("get vr903 RaumTempSelfHeatingOffset");
-	L.log(Base, Event, "found at index: %d", index);
+	//~ std::size_t index = commands->findCommand("get vr903 RaumTempSelfHeatingOffset");
+	//~ L.log(Base, Event, "found at index: %d", index);
 
 	// create network
-	Network* network = new Network(5000, "127.0.0.1");
-	network->start("Network");
+	network = new Network(5000, "127.0.0.1");
+	network->start("NetListener");
 
 	// invinite loop
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 100; i++) {
 		sleep(1);
 		L.log(Base, Event, "Loop %d", i);
 	}
 
-	network->stop();
-	delete network;
-
 	shutdown();
-
 }

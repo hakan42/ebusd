@@ -161,9 +161,7 @@ public:
 
 private:	
 	LogDivider() {}
-
 	LogDivider(const LogDivider&);
-
 	LogDivider& operator= (const LogDivider&);
 	
 	typedef std::vector<LogObserver*> obs_t;

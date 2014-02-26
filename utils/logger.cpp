@@ -53,11 +53,11 @@ void LogObserver::addMessage(const LogMessage& message)
 
 void* LogObserver::run()
 {
-	while(1) {
+	while (1) {
 		LogMessage* message = m_queue.remove();
 			if (message->getStatus() == LogMessage::End) {
 				delete message;
-				while (m_queue.size()) {
+				while (m_queue.size() == true) {
 					LogMessage* message = m_queue.remove();
 					Write(*message);
 					delete message;		
@@ -89,7 +89,7 @@ void LogFile::Write(const LogMessage& message) const
 {
 	std::fstream file(m_filename.c_str(), std::ios::out | std::ios::app);
 
-	if (file.is_open()) {
+	if (file.is_open() == true) {
 		file << message.getTime() << " "
 		     << message.getText() << std::endl;
 		file.close();
@@ -106,7 +106,7 @@ LogDivider& LogDivider::Instance()
 
 LogDivider::~LogDivider()
 {
-	while (!m_Observer.empty())
+	while (m_Observer.empty() == false)
 		*this -= *(m_Observer.begin());
 }
 
@@ -152,7 +152,7 @@ char* LogDivider::format(const std::string& format, va_list arguments)
 
 void LogDivider::log(const Area area, const Level level, const char* text, ...)
 {
-	if (m_running) {
+	if (m_running == true) {
 		va_list arguments;
 		
 		va_start(arguments, text);
@@ -172,7 +172,7 @@ void* LogDivider::run()
 {
 	m_running = true;
 	
-	while(m_running) {
+	while (m_running == true) {
 		LogMessage * message = m_queue.remove();
 
 		obsCI_t iter = m_Observer.begin();

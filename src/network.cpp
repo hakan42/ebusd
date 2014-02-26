@@ -22,11 +22,8 @@
 #include <sstream>
 #include <sys/select.h>
 
-void* TCPBroker::run()
+void* Connection::run()
 {
-	TCPConnection* connection = m_queue.remove();
-	m_socket = connection->getSocket();
-
 	m_running = true;
 	
 	int maxfd;
@@ -59,8 +56,7 @@ void* TCPBroker::run()
 			
 		// new data from notify
 		if (FD_ISSET(m_notify.notifyFD(), &readfds)) {
-			//~ std::cout << "notified" << std::endl;
-			delete connection;
+			delete m_socket;
 			break;
 		}
 
@@ -73,7 +69,7 @@ void* TCPBroker::run()
 			
 			// removed closed socket
 			if (datalen <= 0) {
-				delete connection;
+				delete m_socket;
 				m_running = false;
 				break;
 			}
@@ -88,7 +84,7 @@ void* TCPBroker::run()
 }
 
 
-Network::Network(int port, std::string ip) : m_listening(false)
+Network::Network(int port, std::string ip) : m_listening(false), m_running(false)
 {
 	// Start Listener
 	m_Listener = new TCPListener(port, ip.c_str());
@@ -99,21 +95,26 @@ Network::Network(int port, std::string ip) : m_listening(false)
 
 Network::~Network()
 {
-	while (!m_brokers.empty()) {
-		TCPBroker* broker = m_brokers.back();
-		m_brokers.pop_back();
-		broker->stop();
-		broker->join();
-		delete broker;
+	while (m_connections.empty() == false) {
+		Connection* connection = m_connections.back();
+		m_connections.pop_back();
+		connection->stop();
+		connection->join();
+		delete connection;
 	}
+	
+	if (m_running == true)
+		stop();
+		
 	delete m_Listener;
-	//~ sleep(1);
 }
 
 void* Network::run()
 {
-	if (!m_listening)
+	if (m_listening == false)
 		return NULL;
+
+	m_running = true;
 
 	int i = 1;
 	int maxfd;
@@ -141,36 +142,31 @@ void* Network::run()
 		ret = select(maxfd + 1, &readfds, NULL, NULL, &timeout);
 		if (ret == 0) {
 			//~ std::cout << "timeout: " << timeout.tv_sec << " reached" << std::endl;
-			wipeBrokers();
+			wipeDeadConnections();
 			continue;
 		}
 			
 		// new data from notify
 		if (FD_ISSET(m_notify.notifyFD(), &readfds)) {
-			//~ std::cout << "notified" << std::endl;
+			m_running = false;
 			break;
 		}
 
 		// new data from socket
 		if (FD_ISSET(m_Listener->getFD(), &readfds)) {
 			TCPSocket* socket = m_Listener->newSocket();
-			if (!socket)
+			if (socket == NULL)
 				continue;
 				
-			TCPBroker* broker = new TCPBroker(m_queue);
-			if (!broker)
+			Connection* connection = new Connection(socket);
+			if (connection == NULL)
 				continue;
 
 			std::ostringstream name;
-			name << "Broker " << i++;
-			broker->start(name.str().c_str());
-			m_brokers.push_back(broker);
+			name << "NetConnection-" << i++;
+			connection->start(name.str().c_str());
+			m_connections.push_back(connection);
 				
-			TCPConnection* connection = new TCPConnection(socket);
-			if (!connection)
-				continue;
-			
-			m_queue.add(connection);
 		}
 
 	}
@@ -178,14 +174,14 @@ void* Network::run()
 	return NULL;
 }
 
-void Network::wipeBrokers()
+void Network::wipeDeadConnections()
 {
-	std::list<TCPBroker*>::iterator b_it;
-	for (b_it = m_brokers.begin(); b_it != m_brokers.end(); b_it++) {
-		if (!(*b_it)->isRunning()) {
-			TCPBroker* broker = *b_it;
-			b_it = m_brokers.erase(b_it);
-			delete broker;
+	std::list<Connection*>::iterator c_it;
+	for (c_it = m_connections.begin(); c_it != m_connections.end(); c_it++) {
+		if ((*c_it)->isRunning() == false) {
+			Connection* connection = *c_it;
+			c_it = m_connections.erase(c_it);
+			delete connection;
 		}
 	}
 }
