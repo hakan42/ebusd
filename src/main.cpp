@@ -45,6 +45,8 @@ Commands* commands;
 void define_args()
 {
 	A.addItem("p_foreground", Appl::Param(false), "f", "foreground", "run in foreground", Appl::type_bool, Appl::opt_none);
+	A.addItem("p_localhost", Appl::Param(false), "", "localhost", "listen localhost only", Appl::type_bool, Appl::opt_none);
+	A.addItem("p_port", Appl::Param(8888), "p", "port", "\tlisten port", Appl::type_int, Appl::opt_mandatory);
 	A.addItem("p_help", Appl::Param(false), "h", "help", "\tprint this message", Appl::type_bool, Appl::opt_none);
 }
 
@@ -141,11 +143,14 @@ int main(int argc, char* argv[])
 	//~ L.log(Base, Event, "found at index: %d", index);
 
 	// create network
-	network = new Network(5000, "127.0.0.1");
+	if (A.getParam<bool>("p_localhost") == true)
+		network = new Network(A.getParam<int>("p_port"), "127.0.0.1");
+	else
+		network = new Network(A.getParam<int>("p_port"), "0.0.0.0");
 	network->start("NetListener");
 
 	// invinite loop
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < 1000; i++) {
 		sleep(1);
 		L.log(Base, Event, "Loop %d", i);
 	}

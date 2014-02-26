@@ -182,6 +182,7 @@ void Network::wipeDeadConnections()
 			Connection* connection = *c_it;
 			c_it = m_connections.erase(c_it);
 			delete connection;
+			//~ std::cout << "wiped: " << m_connections.size() << std::endl;
 		}
 	}
 }

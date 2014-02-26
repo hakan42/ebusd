@@ -19,6 +19,7 @@
 
 #include "appl.hpp"
 #include <iostream>
+#include <iomanip>
 #include <cstdlib>
 
 Appl& Appl::Instance()
@@ -34,7 +35,7 @@ void Appl::addItem(const char* name, Param param, const char* shortname,
 	if (strlen(name) != 0)
 		m_params[name] = param;
 
-	if (strlen(shortname) != 0) {
+	if (strlen(longname) != 0) {
 		Arg arg;
 		arg.name = name;
 		arg.shortname = shortname;
@@ -52,11 +53,13 @@ void Appl::printArgs()
 		  << m_argv[0].substr(2) << " [Options]" << std::endl
 		  << std::endl << "Options:" << std::endl;
 	
-	for (a_it = m_args.begin(); a_it < m_args.end(); a_it++)
-		std::cerr << "-" << a_it->shortname
+	for (a_it = m_args.begin(); a_it < m_args.end(); a_it++) {
+		const char* c = (strlen(a_it->shortname) == 1) ? a_it->shortname : " ";
+		std::cerr << ((strcmp(c, " ") == 0) ? " " : "-") << c
 			  << " | --" << a_it->longname
 			  << "\t" << a_it->description
 			  << std::endl;
+	}
 
 	std::cerr << std::endl;
 }
