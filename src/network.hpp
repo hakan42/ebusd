@@ -63,7 +63,7 @@ private:
 	bool m_listening;
 	bool m_running;
 
-	void wipeDeadConnections();
+	void cleanConnections();
 
 };
 

@@ -44,34 +44,34 @@ Commands* commands;
 
 void define_args()
 {
-	A.addItem("p_area", Appl::Param(All), "a", "area", "\tlogging area (Base=1, Comm=2, User=4, All=255)", Appl::type_int, Appl::opt_mandatory);
-	A.addItem("p_level", Appl::Param(Error), "l", "level", "\tlogging level (Error=1, Event=2, Trace=3, Debug=4)", Appl::type_int, Appl::opt_mandatory);
+	A.addItem("p_area", Appl::Param(All), "a", "area", "\tlogging area (Base=1, Comm=2, User=4, All=7)", Appl::type_int, Appl::opt_mandatory);
+	A.addItem("p_level", Appl::Param(Debug), "l", "level", "\tlogging level (Error=1, Event=2, Trace=3, Debug=4)\n", Appl::type_int, Appl::opt_mandatory);
 	A.addItem("p_foreground", Appl::Param(false), "f", "foreground", "run in foreground", Appl::type_bool, Appl::opt_none);
 	A.addItem("p_localhost", Appl::Param(false), "", "localhost", "listen localhost only", Appl::type_bool, Appl::opt_none);
-	A.addItem("p_port", Appl::Param(8888), "p", "port", "\tlisten port", Appl::type_int, Appl::opt_mandatory);
+	A.addItem("p_port", Appl::Param(8888), "p", "port", "\tlisten port\n", Appl::type_int, Appl::opt_mandatory);
 	A.addItem("p_help", Appl::Param(false), "h", "help", "\tprint this message", Appl::type_bool, Appl::opt_none);
 }
 
 void shutdown()
 {
-	// free network
+	// free Network
 	if (network != NULL)
 		delete network;
 	
-	// free commands DB
+	// free Commands DB
 	if (commands != NULL)
 		delete commands;
 
-	// Reset all signal handlers to default
+	// reset all signal handlers to default
 	signal(SIGHUP, SIG_DFL);
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
 
-	// delete daemon pid file
+	// delete Daemon pid file
 	if (D.status() == true)
 		D.stop();
 
-	// print end message and stop logger
+	// stop Logger
 	L.log(Base, Event, "ebusd stopped");
 	L.stop();
 
@@ -100,63 +100,63 @@ void signal_handler(int sig)
 
 int main(int argc, char* argv[])
 {
-	// define args and application variables
+	// define Arguments and Application variables
 	define_args();
 
-	// parse arguments
+	// parse Arguments
 	if (A.parse(argc, argv) == false) {
 		A.printArgs();
 		exit(EXIT_FAILURE);
 	}
 	
-	// print help
+	// print Help
 	if (A.getParam<bool>("p_help") == true) {
 		A.printArgs();
 		exit(EXIT_SUCCESS);
 	}
 	
-	// make me daemon
+	// make me Daemon
 	if (A.getParam<bool>("p_foreground") == true) {
-		L += new LogConsole(A.getParam<int>("p_area"), static_cast<const Level>(A.getParam<int>("p_level")), "LogConsole");
+		L += new LogConsole(A.getParam<int>("p_area"), static_cast<const Level>(A.getParam<int>("p_level")), "logConsole");
 	} else {
 		D.run("/var/run/ebusd.pid");
-		L += new LogFile(A.getParam<int>("p_area"), static_cast<const Level>(A.getParam<int>("p_level")), "LogFile", "/tmp/test.txt");
+		L += new LogFile(A.getParam<int>("p_area"), static_cast<const Level>(A.getParam<int>("p_level")), "logFile", "/tmp/test.txt");
 	}
 
-	// trap signals that we expect to receive
+	// trap Signals that we expect to receive
 	signal(SIGHUP, signal_handler);
 	signal(SIGINT, signal_handler);
 	signal(SIGTERM, signal_handler);
 
 	// start Logger
-	L.start("LogDivider");
+	L.start("logDivider");
 	L.log(Base, Event, "ebusd started");
 
-	// print info from daemon
+	// print Daemon status
 	if (D.status() == true)
 		L.log(Base, Event, "change to daemon");
 
-	// create commands DB
+	// create Commands DB
 	commands = ConfigCommands("contrib/csv/vaillant", CSV).getCommands();
 	L.log(Base, Event, "commands DB created");
 
-	// search command
-	//~ std::size_t index = commands->findCommand("get vr903 RaumTempSelfHeatingOffset");
-	//~ L.log(Base, Event, "found at index: %d", index);
-
-	// create network
+	// create Network
 	if (A.getParam<bool>("p_localhost") == true)
 		network = new Network(A.getParam<int>("p_port"), "127.0.0.1");
 	else
 		network = new Network(A.getParam<int>("p_port"), "0.0.0.0");
 
-	network->start("NetListener");
+	network->start("netListener");
 
-	// invinite loop
+	// invinite Loop
 	for (int i = 0; i < 1000; i++) {
 		sleep(1);
 		L.log(Base, Event, "Loop %d", i);
 	}
+
+	// search command
+	//~ std::size_t index = commands->findCommand("get vr903 RaumTempSelfHeatingOffset");
+	//~ L.log(Base, Event, "found at index: %d", index);
 
 	shutdown();
 }

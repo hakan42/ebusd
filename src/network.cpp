@@ -117,7 +117,6 @@ void* Network::run()
 
 	m_running = true;
 
-	int i = 1;
 	int maxfd;
 	fd_set checkfds;
 	struct timeval timeout;
@@ -142,7 +141,7 @@ void* Network::run()
 
 		ret = select(maxfd + 1, &readfds, NULL, NULL, &timeout);
 		if (ret == 0) {
-			wipeDeadConnections();
+			cleanConnections();
 			continue;
 		}
 			
@@ -163,7 +162,7 @@ void* Network::run()
 				continue;
 
 			std::ostringstream name;
-			name << "NetConnection-" << i++;
+			name << "netConnection";
 			connection->start(name.str().c_str());
 			m_connections.push_back(connection);
 				
@@ -174,7 +173,7 @@ void* Network::run()
 	return NULL;
 }
 
-void Network::wipeDeadConnections()
+void Network::cleanConnections()
 {
 	std::list<Connection*>::iterator c_it;
 	for (c_it = m_connections.begin(); c_it != m_connections.end(); c_it++) {
@@ -182,7 +181,7 @@ void Network::wipeDeadConnections()
 			Connection* connection = *c_it;
 			c_it = m_connections.erase(c_it);
 			delete connection;
-			L.log(Conn, Debug, "Dead Connection wiped - %d", m_connections.size());
+			L.log(Conn, Debug, "dead connection removed - %d", m_connections.size());
 		}
 	}
 }
