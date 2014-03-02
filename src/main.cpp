@@ -22,13 +22,13 @@
 #include "daemon.hpp"
 #include "appl.hpp"
 #include "network.hpp"
+#include "baseloop.hpp"
 #include <iostream>
 #include <memory>
 #include <csignal>
 #include <cstring>
 #include <cstdio>
 #include <sstream>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -146,13 +146,12 @@ int main(int argc, char* argv[])
 	else
 		network = new Network(A.getParam<int>("p_port"), "0.0.0.0");
 
-	network->start("netListener");
+	// base Loop
+	BaseLoop baseloop;
+	network->addQueue(baseloop.getQueue());
 
-	// invinite Loop
-	for (int i = 0; i < 1000; i++) {
-		sleep(1);
-		L.log(Base, Event, "Loop %d", i);
-	}
+	network->start("netListener");
+	baseloop.start();
 
 	// search command
 	//~ std::size_t index = commands->findCommand("get vr903 RaumTempSelfHeatingOffset");

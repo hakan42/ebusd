@@ -24,13 +24,15 @@
 #include "wqueue.hpp"
 #include "thread.hpp"
 #include "notify.hpp"
+#include "baseloop.hpp"
 #include <list>
 
 class Connection : public Thread
 {
 
 public:
-	Connection(TCPSocket* socket) : m_socket(socket), m_running(false) {}
+	Connection(TCPSocket* socket, WQueue<Command*>* queue)
+		: m_socket(socket), m_queue(queue), m_running(false) {}
  
 	void* run();
 
@@ -40,6 +42,7 @@ public:
 
 private:
 	TCPSocket* m_socket;
+	WQueue<Command*>* m_queue;
 	Notify m_notify;
 	bool m_running;
 
@@ -56,12 +59,16 @@ public:
 
 	void stop() const { m_notify.notify(); sleep(1); }
 
+	void addQueue(WQueue<Command*>* queue) { m_queue = queue; }
+
 private:
 	std::list<Connection*> m_connections;
+	WQueue<Command*>* m_queue;
 	TCPListener* m_Listener;
 	Notify m_notify;
 	bool m_listening;
 	bool m_running;
+	
 
 	void cleanConnections();
 

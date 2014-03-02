@@ -74,6 +74,8 @@ void* Connection::run()
 				m_running = false;
 				break;
 			}
+	
+			m_queue->add(new Command(data));
 			
 			data[datalen] = '\0';
 			m_socket->send(data, datalen);
@@ -157,7 +159,7 @@ void* Network::run()
 			if (socket == NULL)
 				continue;
 				
-			Connection* connection = new Connection(socket);
+			Connection* connection = new Connection(socket, m_queue);
 			if (connection == NULL)
 				continue;
 
