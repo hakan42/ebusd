@@ -44,6 +44,8 @@ Commands* commands;
 
 void define_args()
 {
+	A.addItem("p_area", Appl::Param(All), "a", "area", "\tlogging area (Base=1, Comm=2, User=4, All=255)", Appl::type_int, Appl::opt_mandatory);
+	A.addItem("p_level", Appl::Param(Error), "l", "level", "\tlogging level (Error=1, Event=2, Trace=3, Debug=4)", Appl::type_int, Appl::opt_mandatory);
 	A.addItem("p_foreground", Appl::Param(false), "f", "foreground", "run in foreground", Appl::type_bool, Appl::opt_none);
 	A.addItem("p_localhost", Appl::Param(false), "", "localhost", "listen localhost only", Appl::type_bool, Appl::opt_none);
 	A.addItem("p_port", Appl::Param(8888), "p", "port", "\tlisten port", Appl::type_int, Appl::opt_mandatory);
@@ -115,10 +117,10 @@ int main(int argc, char* argv[])
 	
 	// make me daemon
 	if (A.getParam<bool>("p_foreground") == true) {
-		L += new LogConsole(Base, Debug, "LogConsole");
+		L += new LogConsole(A.getParam<int>("p_area"), static_cast<const Level>(A.getParam<int>("p_level")), "LogConsole");
 	} else {
 		D.run("/var/run/ebusd.pid");
-		L += new LogFile(Base, Debug, "LogFile", "/tmp/test.txt");
+		L += new LogFile(A.getParam<int>("p_area"), static_cast<const Level>(A.getParam<int>("p_level")), "LogFile", "/tmp/test.txt");
 	}
 
 	// trap signals that we expect to receive
@@ -147,6 +149,7 @@ int main(int argc, char* argv[])
 		network = new Network(A.getParam<int>("p_port"), "127.0.0.1");
 	else
 		network = new Network(A.getParam<int>("p_port"), "0.0.0.0");
+
 	network->start("NetListener");
 
 	// invinite loop

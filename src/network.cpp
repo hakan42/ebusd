@@ -18,9 +18,11 @@
  */
 
 #include "network.hpp"
-//~ #include <iostream>
+#include "logger.hpp"
 #include <sstream>
 #include <sys/select.h>
+
+extern LogDivider& L;
 
 void* Connection::run()
 {
@@ -50,7 +52,6 @@ void* Connection::run()
 
 		ret = select(maxfd + 1, &readfds, NULL, NULL, &timeout);
 		if (ret == 0) {
-			//~ std::cout << "timeout: " << timeout.tv_sec << " reached" << std::endl;
 			continue;
 		}
 			
@@ -141,7 +142,6 @@ void* Network::run()
 
 		ret = select(maxfd + 1, &readfds, NULL, NULL, &timeout);
 		if (ret == 0) {
-			//~ std::cout << "timeout: " << timeout.tv_sec << " reached" << std::endl;
 			wipeDeadConnections();
 			continue;
 		}
@@ -182,7 +182,7 @@ void Network::wipeDeadConnections()
 			Connection* connection = *c_it;
 			c_it = m_connections.erase(c_it);
 			delete connection;
-			//~ std::cout << "wiped: " << m_connections.size() << std::endl;
+			L.log(Conn, Debug, "Dead Connection wiped - %d", m_connections.size());
 		}
 	}
 }
