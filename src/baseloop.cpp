@@ -19,10 +19,17 @@
 
 #include "baseloop.hpp"
 #include "logger.hpp"
+#include "network.hpp"
 #include <algorithm>
+#include <sstream>
 #include <unistd.h>
 
 extern LogDivider& L;
+
+Command::Command(const char* data, Connection* connection)
+	: m_data(data), m_connection(connection) {}
+const char* Command::getData() const { return m_data; }
+Connection* Command::getConnection() const { return m_connection; }
 
 void BaseLoop::start()
 {
@@ -32,7 +39,12 @@ void BaseLoop::start()
 		data.erase(std::remove(data.begin(), data.end(), '\n'), data.end());
 		
 		L.log(Base, Event, "command: %s", data.c_str());
-		
+
+		std::ostringstream result;
+		result << data.substr(0, data.size()-1) << " done" << std::endl;
+
+		command->getConnection()->addResult(result.str().c_str());
+	
 		delete command;
 	}
 }

@@ -23,16 +23,20 @@
 #include "wqueue.hpp"
 #include <string>
 
+class Connection;
+
 class Command
 {
 
 public:
-	Command(const char* data) : m_data(data) {}
+	Command(const char* data, Connection* connection);
 
-	const char* getData() const { return m_data; }
+	const char* getData() const;
+	Connection* getConnection() const;
 
 private:
-	const char* m_data; 
+	const char* m_data;
+	Connection* m_connection; 
 
 };
 
@@ -44,7 +48,6 @@ public:
 	
 	WQueue<Command*>* getQueue() { return &m_queue; }
 	void addCommand(Command* command) { m_queue.add((command)); }
-
 
 private:
 	WQueue<Command*> m_queue;

@@ -37,12 +37,13 @@ public:
 	void* run();
 
 	void stop() const { m_notify.notify(); }
-
 	bool isRunning() const { return m_running; }
+	void addResult(std::string result) { m_result.add(result); }
 
 private:
 	TCPSocket* m_socket;
 	WQueue<Command*>* m_queue;
+	WQueue<std::string> m_result;
 	Notify m_notify;
 	bool m_running;
 
@@ -58,7 +59,6 @@ public:
 	void* run();
 
 	void stop() const { m_notify.notify(); sleep(1); }
-
 	void addQueue(WQueue<Command*>* queue) { m_queue = queue; }
 
 private:

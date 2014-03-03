@@ -74,17 +74,22 @@ void* Connection::run()
 				m_running = false;
 				break;
 			}
-	
-			m_queue->add(new Command(data));
-			
+
+			// todo: check against buffer size
 			data[datalen] = '\0';
-			m_socket->send(data, datalen);
+			//~ m_socket->send(data, datalen);
+			m_queue->add(new Command(data, this));
+			
+			std::string result = m_result.remove();
+			m_socket->send(result.c_str(), result.size());
+
 		}
 
 	}
 
 	return NULL;
 }
+
 
 
 Network::Network(int port, std::string ip) : m_listening(false), m_running(false)

@@ -34,7 +34,7 @@ LogMessage::LogMessage(const Area area, const Level level, const std::string tex
 	char time[24];
 	struct timeval tv;
 	struct timezone tz;
-	struct tm *tm;
+	struct tm* tm;
 	
 	gettimeofday(&tv, &tz);
 	tm = localtime(&tv.tv_sec);
@@ -180,7 +180,7 @@ void* LogDivider::run()
 	m_running = true;
 	
 	while (m_running == true) {
-		LogMessage * message = m_queue.remove();
+		LogMessage* message = m_queue.remove();
 
 		obsCI_t iter = m_Observer.begin();
 		
