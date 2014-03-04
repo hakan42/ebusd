@@ -26,26 +26,36 @@
 
 extern LogDivider& L;
 
-Command::Command(const char* data, Connection* connection)
-	: m_data(data), m_connection(connection) {}
-const char* Command::getData() const { return m_data; }
-Connection* Command::getConnection() const { return m_connection; }
+Message::Message(std::string data, void* source)
+	: m_data(data), m_source(source) {}
+
+Message::Message(const Message& src)
+	: m_data(src.m_data), m_source(src.m_source) {}
+
+std::string Message::getData() const { return m_data.c_str(); }
+
+void* Message::getSource() const { return m_source; }
 
 void BaseLoop::start()
 {
 	for (;;) {
-		Command* command = m_queue.remove();
-		std::string data = command->getData();
+		Message* message = m_queue.remove();
+		std::string data = message->getData();
 		data.erase(std::remove(data.begin(), data.end(), '\n'), data.end());
 		
-		L.log(Base, Event, "command: %s", data.c_str());
+		L.log(Base, Trace, "message: %s", data.c_str());
 
+		// check command
+		// ...
+
+		// save result
 		std::ostringstream result;
 		result << data.substr(0, data.size()-1) << " done" << std::endl;
 
-		command->getConnection()->addResult(result.str().c_str());
-	
-		delete command;
+		Connection* connection = static_cast<Connection*>(message->getSource());
+		connection->addResult(Message(result.str().c_str()));
+
+		delete message;
 	}
 }
 

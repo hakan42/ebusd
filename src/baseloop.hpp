@@ -25,18 +25,19 @@
 
 class Connection;
 
-class Command
+class Message
 {
 
 public:
-	Command(const char* data, Connection* connection);
+	Message(std::string data, void* source = NULL);
+	Message(const Message& src);
 
-	const char* getData() const;
-	Connection* getConnection() const;
+	std::string getData() const;
+	void* getSource() const;
 
 private:
-	const char* m_data;
-	Connection* m_connection; 
+	std::string m_data;
+	void* m_source; 
 
 };
 
@@ -46,11 +47,11 @@ class BaseLoop
 public:
 	void start();
 	
-	WQueue<Command*>* getQueue() { return &m_queue; }
-	void addCommand(Command* command) { m_queue.add((command)); }
+	WQueue<Message*>* getQueue() { return &m_queue; }
+	void addMessage(Message* message) { m_queue.add((message)); }
 
 private:
-	WQueue<Command*> m_queue;
+	WQueue<Message*> m_queue;
 
 };
 

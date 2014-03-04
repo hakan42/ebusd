@@ -31,19 +31,20 @@ class Connection : public Thread
 {
 
 public:
-	Connection(TCPSocket* socket, WQueue<Command*>* queue)
-		: m_socket(socket), m_queue(queue), m_running(false) {}
+	Connection(TCPSocket* socket, WQueue<Message*>* data)
+		: m_socket(socket), m_data(data), m_running(false) {}
+
+	void addResult(Message message);
  
 	void* run();
-
 	void stop() const { m_notify.notify(); }
 	bool isRunning() const { return m_running; }
-	void addResult(std::string result) { m_result.add(result); }
 
 private:
 	TCPSocket* m_socket;
-	WQueue<Command*>* m_queue;
-	WQueue<std::string> m_result;
+	WQueue<Message*>* m_data;
+	WQueue<Message*> m_result;
+	//~ WQueue<std::string> m_result;
 	Notify m_notify;
 	bool m_running;
 
@@ -55,21 +56,20 @@ class Network : public Thread
 public:
 	Network(int port, std::string ip);
 	~Network();
+
+	void addQueue(WQueue<Message*>* queue) { m_queue = queue; }
 	
 	void* run();
-
 	void stop() const { m_notify.notify(); sleep(1); }
-	void addQueue(WQueue<Command*>* queue) { m_queue = queue; }
 
 private:
 	std::list<Connection*> m_connections;
-	WQueue<Command*>* m_queue;
+	WQueue<Message*>* m_queue;
 	TCPListener* m_Listener;
 	Notify m_notify;
 	bool m_listening;
 	bool m_running;
 	
-
 	void cleanConnections();
 
 };

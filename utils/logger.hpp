@@ -28,7 +28,7 @@
 #include <vector>
 #include <cstdarg>
 
-enum Area  { Base=1, Conn=2, User=4, All=7, Size_of_Area=4 };
+enum Area  { Base=1, Conn=2, eBus=4, All=7, Size_of_Area=4 };
 enum Level { Error=0, Event, Trace, Debug, Size_of_Level };
 
 class LogMessage

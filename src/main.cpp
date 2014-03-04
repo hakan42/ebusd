@@ -146,11 +146,14 @@ int main(int argc, char* argv[])
 	else
 		network = new Network(A.getParam<int>("p_port"), "0.0.0.0");
 
-	// base Loop
+	// create BaseLoop
 	BaseLoop baseloop;
 	network->addQueue(baseloop.getQueue());
 
+	// start Network
 	network->start("netListener");
+
+	// start Baseloop
 	baseloop.start();
 
 	// search command

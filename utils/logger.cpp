@@ -25,7 +25,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-static const char* AreaNames[Size_of_Area] = { "", "Base", "Conn", "User" };
+static const char* AreaNames[Size_of_Area] = { "", "Base", "Conn", "eBus" };
 static const char* LevelNames[Size_of_Level] = { "Error", "Event", "Trace", "Debug" };
 
 LogMessage::LogMessage(const Area area, const Level level, const std::string text, const Status status)

@@ -24,6 +24,12 @@
 
 extern LogDivider& L;
 
+void Connection::addResult(Message message)
+{
+	Message* tmp = new Message(Message(message));
+	m_result.add(tmp);
+}
+
 void* Connection::run()
 {
 	m_running = true;
@@ -77,11 +83,15 @@ void* Connection::run()
 
 			// todo: check against buffer size
 			data[datalen] = '\0';
-			//~ m_socket->send(data, datalen);
-			m_queue->add(new Command(data, this));
+			m_data->add(new Message(data, this));
+
+			// wait for result
+			Message* message = m_result.remove();
 			
-			std::string result = m_result.remove();
+			std::string result(message->getData());
 			m_socket->send(result.c_str(), result.size());
+			
+			delete message;
 
 		}
 
