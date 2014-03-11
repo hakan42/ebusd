@@ -22,6 +22,8 @@
 #include "daemon.hpp"
 #include "appl.hpp"
 #include "network.hpp"
+#include "ebusloop.hpp"
+#include "cycdata.hpp"
 #include "baseloop.hpp"
 #include <iostream>
 #include <memory>
@@ -41,10 +43,13 @@ LogDivider& L = LogDivider::Instance();
 
 Network* network;
 Commands* commands;
+CYCData* cycdata;
+EBusLoop* ebusloop;
+
 
 void define_args()
 {
-	A.addItem("p_area", Appl::Param(All), "a", "area", "\tlogging area (Base=1, Comm=2, User=4, All=7)", Appl::type_int, Appl::opt_mandatory);
+	A.addItem("p_area", Appl::Param(All), "a", "area", "\tlogging area (Base=1, Comm=2, eBus=4, cycD=8, All=15)", Appl::type_int, Appl::opt_mandatory);
 	A.addItem("p_level", Appl::Param(Debug), "l", "level", "\tlogging level (Error=1, Event=2, Trace=3, Debug=4)\n", Appl::type_int, Appl::opt_mandatory);
 	A.addItem("p_foreground", Appl::Param(false), "f", "foreground", "run in foreground", Appl::type_bool, Appl::opt_none);
 	A.addItem("p_localhost", Appl::Param(false), "", "localhost", "listen localhost only", Appl::type_bool, Appl::opt_none);
@@ -57,6 +62,14 @@ void shutdown()
 	// free Network
 	if (network != NULL)
 		delete network;
+
+	// free CYCData
+	if (cycdata != NULL)
+		delete cycdata;
+
+	// free EBusLoop
+	if (ebusloop != NULL)
+		delete ebusloop;
 	
 	// free Commands DB
 	if (commands != NULL)
@@ -139,6 +152,14 @@ int main(int argc, char* argv[])
 	// create Commands DB
 	commands = ConfigCommands("contrib/csv/vaillant", CSV).getCommands();
 	L.log(Base, Event, "commands DB created");
+
+	// create EBusLoop
+	ebusloop = new EBusLoop();
+	ebusloop->start("ebusloop");
+
+	// create CYCData
+	cycdata = new CYCData();
+	cycdata->start("cycdata");
 
 	// create Network
 	if (A.getParam<bool>("p_localhost") == true)

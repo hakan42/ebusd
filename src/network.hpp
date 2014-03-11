@@ -44,7 +44,6 @@ private:
 	TCPSocket* m_socket;
 	WQueue<Message*>* m_data;
 	WQueue<Message*> m_result;
-	//~ WQueue<std::string> m_result;
 	Notify m_notify;
 	bool m_running;
 

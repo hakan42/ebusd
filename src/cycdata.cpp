@@ -17,46 +17,37 @@
  * along with ebusd. If not, see http://www.gnu.org/licenses/.
  */
 
-#include "baseloop.hpp"
+#include "cycdata.hpp"
 #include "logger.hpp"
-#include "network.hpp"
-#include <algorithm>
-#include <sstream>
+//~ #include <algorithm>
+//~ #include <sstream>
 #include <unistd.h>
 
 extern LogDivider& L;
 
-Message::Message(std::string data, void* source)
-	: m_data(data), m_source(source) {}
-
-Message::Message(const Message& src)
-	: m_data(src.m_data), m_source(src.m_source) {}
-
-std::string Message::getData() const { return m_data.c_str(); }
-
-void* Message::getSource() const { return m_source; }
-
-
-void BaseLoop::start()
+void* CYCData::run()
 {
 	for (;;) {
-		Message* message = m_queue.remove();
-		std::string data = message->getData();
-		data.erase(std::remove(data.begin(), data.end(), '\n'), data.end());
+		sleep(2);
+		//~ Telegram* telegram = m_queue.remove();
+		//~ std::string data = message->getData();
+		//~ data.erase(std::remove(data.begin(), data.end(), '\n'), data.end());
 		
-		L.log(Base, Trace, "message: %s", data.c_str());
+		L.log(cycD, Trace, "keep of life");
 
 		// check command
 		// ...
 
 		// save result
-		std::ostringstream result;
-		result << data.substr(0, data.size()-1) << " done" << std::endl;
-
-		Connection* connection = static_cast<Connection*>(message->getSource());
-		connection->addResult(Message(result.str().c_str()));
-
-		delete message;
+		//~ std::ostringstream result;
+		//~ result << data.substr(0, data.size()-1) << " done" << std::endl;
+//~ 
+		//~ Connection* connection = static_cast<Connection*>(message->getSource());
+		//~ connection->addResult(Message(result.str().c_str()));
+//~ 
+		//~ delete telegram;
 	}
+
+	return NULL;
 }
 

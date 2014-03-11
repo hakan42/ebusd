@@ -20,6 +20,7 @@
 #include "network.hpp"
 #include "logger.hpp"
 #include <sstream>
+#include <cstring>
 #include <sys/select.h>
 
 extern LogDivider& L;
@@ -70,7 +71,7 @@ void* Connection::run()
 		// new data from socket
 		if (FD_ISSET(m_socket->getFD(), &readfds)) {
 			char data[256];
-			int datalen;
+			size_t datalen;
 			
 			datalen = m_socket->recv(data, sizeof(data)-1);
 			
@@ -81,9 +82,11 @@ void* Connection::run()
 				break;
 			}
 
-			// todo: check against buffer size
-			data[datalen] = '\0';
-			m_data->add(new Message(data, this));
+			// send data
+			if (datalen < sizeof(data)) {
+				data[datalen] = '\0';
+				m_data->add(new Message(data, this));
+			}
 
 			// wait for result
 			Message* message = m_result.remove();

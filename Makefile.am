@@ -8,6 +8,8 @@ bin_PROGRAMS = ebusd
 
 ebusd_SOURCES = src/main.cpp \
 		src/baseloop.cpp \
+		src/ebusloop.cpp \
+		src/cycdata.cpp \
 		src/network.cpp \
 		utils/thread.cpp \
 		utils/logger.cpp \

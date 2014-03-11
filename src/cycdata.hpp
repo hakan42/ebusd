@@ -17,42 +17,26 @@
  * along with ebusd. If not, see http://www.gnu.org/licenses/.
  */
 
-#ifndef BASELOOP_HPP__
-#define BASELOOP_HPP__
+#ifndef CYCDATA_HPP__
+#define CYCDATA_HPP__
 
-#include "wqueue.hpp"
-#include <string>
+//~ #include "wqueue.hpp"
+#include "thread.hpp"
+//~ #include <string>
 
-class Connection;
-
-class Message
+class CYCData : public Thread
 {
 
 public:
-	Message(std::string data, void* source = NULL);
-	Message(const Message& src);
-
-	std::string getData() const;
-	void* getSource() const;
-
-private:
-	std::string m_data;
-	void* m_source; 
-
-};
-
-class BaseLoop
-{
-
-public:
-	void start();
+	void* run();
+	//~ void start();
 	
-	WQueue<Message*>* getQueue() { return &m_queue; }
-	void addMessage(Message* message) { m_queue.add(message); }
+	//~ WQueue<Telegram*>* getQueue() { return &m_queue; }
+	//~ void addMessage(Telegram* telegram) { m_queue.add(telegram); }
 
 private:
-	WQueue<Message*> m_queue;
+	//~ WQueue<Telegram*> m_queue;
 
 };
 
-#endif // BASELOOP_HPP__
+#endif // CYCDATA_HPP__

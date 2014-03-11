@@ -21,11 +21,12 @@
 #include <iostream>
 #include <fstream>
 #include <cstdio>
+#include <cmath>
 #include <ctime>
 #include <sys/time.h>
 #include <unistd.h>
 
-static const char* AreaNames[Size_of_Area] = { "", "Base", "Conn", "eBus" };
+static const char* AreaNames[Size_of_Area] = { "Base", "Conn", "eBus" , "cycD" };
 static const char* LevelNames[Size_of_Level] = { "Error", "Event", "Trace", "Debug" };
 
 LogMessage::LogMessage(const Area area, const Level level, const std::string text, const Status status)
@@ -81,7 +82,7 @@ int LogConsole::m_numInstance = 0;
 void LogConsole::Write(const LogMessage& message) const
 {
 	std::cout << message.getTime() << " ["
-		  << AreaNames[message.getArea()] << " "
+		  << AreaNames[(int)log2(message.getArea())] << " "
 		  << LevelNames[message.getLevel()] << "] "
 		  << message.getText() << std::endl;
 }
@@ -96,7 +97,7 @@ void LogFile::Write(const LogMessage& message) const
 
 	if (file.is_open() == true) {
 		file << message.getTime() << " ["
-		     << AreaNames[message.getArea()] << " "
+		     << AreaNames[(int)log2(message.getArea())] << " "
 		     << LevelNames[message.getLevel()] << "] "
 		     << message.getText() << std::endl;
 		file.close();
